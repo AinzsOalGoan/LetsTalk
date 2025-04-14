@@ -1,0 +1,18 @@
+<% layout("/layouts/boilerplate") %>
+<body style="background-image: url('https://wallpapercave.com/wp/wp8885657.png'); background-size: cover; background-position: center; color: #ffffff; font-family: Arial, sans-serif; padding: 20px;">
+    <div style="max-width: 400px; margin: 50px auto; background-color: rgba(0, 0, 0, 0.8); padding: 30px; border-radius: 10px;">
+        <h2 style="text-align: center; color: #ffda79;">Sign Up</h2>
+        <form action="/user/signup" method="POST">
+            <div style="margin-bottom: 15px;">
+                <label for="username" style="display: block; margin-bottom: 5px;">Username:</label>
+                <input type="text" id="username" name="username" required style="width: 100%; padding: 10px; border: none; border-radius: 5px; background-color: #333; color: #fff;">
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label for="password" style="display: block; margin-bottom: 5px;">Password:</label>
+                <input type="password" id="password" name="password" required style="width: 100%; padding: 10px; border: none; border-radius: 5px; background-color: #333; color: #fff;">
+            </div>
+            <button type="submit" style="width: 100%; padding: 10px; background-color: #ff6347; color: #fff; border: none; border-radius: 5px; font-weight: bold;">Sign Up</button>
+            <a href="/user/login">Login</a>
+        </form>
+    </div>
+</body>

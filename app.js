@@ -74,9 +74,10 @@ app.use((req, res, next) => {
 
 // Routes
 const indexRoutes = require('./routes/indexRoutes');
+const userRoutes = require('./routes/userRoutes')
 
 app.use('/', indexRoutes);
-
+app.use('/users', userRoutes);
 // 404 Not Found Handler
 app.use((req, res, next) => {
     res.status(404).render('error', { error: { status: 404, message: "Page Not Found" } });
