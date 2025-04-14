@@ -1,0 +1,93 @@
+<% layout("/layouts/boilerplate") %>
+<div class="h-screen w-screen flex flex-col overflow-hidden">
+    <!-- Navbar with Drawing Tools -->
+    <div id="navbar" class="bg-white shadow-md p-3 flex justify-between items-center">
+      <div class="flex space-x-3">
+        <button id="pen-tool" class="p-2 bg-blue-500 text-white rounded tool-btn active" title="Pen Tool">
+          <span class="flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+            </svg>
+            Pen
+          </span>
+        </button>
+        <button id="marker-tool" class="p-2 bg-gray-200 rounded tool-btn" title="Marker Tool">
+          <span class="flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+            </svg>
+            Marker
+          </span>
+        </button>
+        <button id="text-tool" class="p-2 bg-gray-200 rounded tool-btn" title="Text Tool">
+          <span class="flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+            Text
+          </span>
+        </button>
+      </div>
+      
+      <div class="flex flex-wrap space-x-3 items-center">
+        <div class="flex items-center space-x-2">
+          <label for="color-picker" class="font-medium">Color:</label>
+          <input type="color" id="color-picker" value="#000000" class="w-8 h-8 cursor-pointer">
+        </div>
+        
+        <div class="flex items-center space-x-2">
+          <label for="stroke-width" class="font-medium">Size:</label>
+          <input type="range" id="stroke-width" min="1" max="20" value="5" class="w-24">
+          <span id="stroke-width-value" class="text-sm font-medium w-6 text-center">5</span>
+        </div>
+        
+        <div class="flex space-x-2">
+          <button id="undo-btn" class="p-2 bg-gray-200 rounded hover:bg-gray-300 transition-colors" title="Undo">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a4 4 0 0 1 0 8H9m-6-8l3-3-3-3" />
+            </svg>
+          </button>
+          
+          <button id="redo-btn" class="p-2 bg-gray-200 rounded hover:bg-gray-300 transition-colors opacity-50" title="Redo" disabled>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10h8a4 4 0 0 1 0 8h-4m-8-8l-3-3 3-3" />
+            </svg>
+          </button>
+          
+          <button id="clear-btn" class="p-2 bg-red-100 text-red-600 rounded hover:bg-red-200 transition-colors" title="Clear Canvas">
+            <span class="flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              Clear
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Canvas Container -->
+    <div id="canvas-container" class="flex-1 relative bg-slate-100 overflow-hidden">
+      <!-- Canvas will be dynamically created here by JavaScript -->
+    </div>
+  </div>
+
+<!-- Add CSS for active tool class -->
+<style>
+  .tool-btn.active {
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+  }
+  
+  /* Custom cursor for drawing tools */
+  #drawing-canvas {
+    cursor: crosshair;
+  }
+  
+  /* Disabled button styling */
+  button:disabled {
+    cursor: not-allowed;
+  }
+</style>
+
+<!-- Include the JavaScript file -->
+<script src="/js/script.js" defer></script>

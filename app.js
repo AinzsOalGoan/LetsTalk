@@ -59,6 +59,27 @@ app.use(expressSession({
     cookie: { httpOnly: true, maxAge: 1000 * 60 * 60 * 24 * 7 }, // 1 week
 }));
 
+app.use(
+  helmet.contentSecurityPolicy({
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: [
+        "'self'",
+        "https://cdn.tailwindcss.com",
+        "https://unpkg.com",
+        "'unsafe-inline'", // If you're using inline scripts like Tailwind config
+      ],
+      styleSrc: [
+        "'self'",
+        "https://fonts.googleapis.com",
+        "'unsafe-inline'",
+      ],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "https://img.freepik.com", "data:"],
+    },
+  })
+);
+
 // Initialize Passport
 // app.use(passport.initialize());
 // app.use(passport.session());
