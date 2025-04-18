@@ -19,6 +19,7 @@ router.get('/login', userController.renderLogin)
 // Logout Route
 router.get('/logout',isLoggedIn, userController.logoutUser);
 
+
 //profilr routes
 // router.get('/profile',isLoggedIn,userController.seeProfile)
 
