@@ -4,18 +4,35 @@ let isDrawing = false;
 let lastX = 0;
 let lastY = 0;
 let currentTool = "pen";
-let currentColor = "#000000";
-let currentStrokeWidth = 5;
 let textInput = null;
+let isDraggingText = false;
+let textDragOffset = { x: 0, y: 0 };
+
+// Tool-specific settings
+let toolSettings = {
+	pen: { color: "#000000", width: 5 },
+	marker: { color: "#ff0000", width: 10 },
+	eraser: { width: 20 },
+	shape: { color: "#000000", width: 3 },
+	text: { color: "#000000", size: 16 },
+};
+
+// Current shape being drawn
+let currentShape = "rectangle"; // or "circle", "arrow"
+let shapePreviewData = null; // Store canvas data for shape preview redrawing
 
 // History for undo/redo
 let history = [];
 let redoHistory = [];
 const MAX_HISTORY = 30;
 
+let startX = 0;
+let startY = 0;
+let isDrawingShape = false;
+
 document.addEventListener("DOMContentLoaded", function () {
 	// Create canvas element dynamically to fit the container
-  console.log("DOM Ready");
+	console.log("DOM Ready");
 	setupCanvas();
 
 	// Set up event listeners for toolbar buttons
@@ -48,11 +65,26 @@ function setupCanvas() {
 	ctx = canvas.getContext("2d");
 	ctx.lineCap = "round";
 	ctx.lineJoin = "round";
-	ctx.strokeStyle = currentColor;
-	ctx.lineWidth = currentStrokeWidth;
+	updateContextFromCurrentTool();
 
 	// Initialize with a blank canvas state in history
 	saveToHistory();
+}
+
+function updateContextFromCurrentTool() {
+	// Set context properties based on the current tool
+	const settings = toolSettings[currentTool];
+
+	if (settings) {
+		if (settings.color) {
+			ctx.strokeStyle = settings.color;
+			ctx.fillStyle = settings.color;
+		}
+
+		if (settings.width) {
+			ctx.lineWidth = settings.width;
+		}
+	}
 }
 
 function resizeCanvas() {
@@ -75,12 +107,19 @@ function resizeCanvas() {
 	// Reset context properties (they get cleared on resize)
 	ctx.lineCap = "round";
 	ctx.lineJoin = "round";
-	ctx.strokeStyle = currentColor;
-	ctx.lineWidth = currentStrokeWidth;
+	updateContextFromCurrentTool();
+	saveToHistory();
 }
 
 function setupToolbarListeners() {
 	// Tool selection buttons
+	document
+		.getElementById("shape-type")
+		.addEventListener("change", function () {
+			currentShape = this.value;
+		});
+
+	// Tool buttons
 	document.querySelectorAll(".tool-btn").forEach((btn) => {
 		btn.addEventListener("click", function () {
 			// Remove active class from all buttons
@@ -96,31 +135,85 @@ function setupToolbarListeners() {
 			// Set current tool
 			currentTool = this.id.replace("-tool", "");
 
+			// Update tool settings UI
+			updateToolSettingsUI();
+
+			// Update context for the new tool
+			updateContextFromCurrentTool();
+
 			// Remove any active text input field
-			if (textInput) {
-				finishTextInput();
+			setTimeout(() => {
+				// Remove input after blur event has had time to fire
+				if (textInput) finishTextInput();
+			}, 0);
+		});
+	});
+
+	// Base color picker (for compatibility)
+	document
+		.getElementById("color-picker")
+		.addEventListener("input", function () {
+			const color = this.value;
+			if (
+				toolSettings[currentTool] &&
+				"color" in toolSettings[currentTool]
+			) {
+				toolSettings[currentTool].color = color;
+				updateContextFromCurrentTool();
+			}
+		});
+
+	// Tool-specific color pickers
+	document.querySelectorAll(".tool-color-picker").forEach((picker) => {
+		picker.addEventListener("input", function () {
+			const tool = this.getAttribute("data-tool");
+			if (toolSettings[tool]) {
+				toolSettings[tool].color = this.value;
+
+				// Update context if this is the current tool
+				if (tool === currentTool) {
+					updateContextFromCurrentTool();
+				}
 			}
 		});
 	});
 
-	// Color picker
-	document
-		.getElementById("color-picker")
-		.addEventListener("input", function () {
-			currentColor = this.value;
-			ctx.strokeStyle = currentColor;
-			ctx.fillStyle = currentColor;
-		});
+	// Tool-specific width sliders
+	document.querySelectorAll(".tool-width-slider").forEach((slider) => {
+		slider.addEventListener("input", function () {
+			const tool = this.getAttribute("data-tool");
+			const valueDisplay = document.getElementById(`${tool}-width-value`);
 
-	// Stroke width slider
+			if (toolSettings[tool]) {
+				toolSettings[tool].width = parseInt(this.value);
+
+				// Update the display value
+				if (valueDisplay) {
+					valueDisplay.textContent = toolSettings[tool].width;
+				}
+
+				// Update context if this is the current tool
+				if (tool === currentTool) {
+					updateContextFromCurrentTool();
+				}
+			}
+		});
+	});
+
+	// Base stroke width slider (for compatibility)
 	const strokeWidthSlider = document.getElementById("stroke-width");
 	const strokeWidthValue = document.getElementById("stroke-width-value");
 
-	strokeWidthSlider.addEventListener("input", function () {
-		currentStrokeWidth = parseInt(this.value);
-		strokeWidthValue.textContent = currentStrokeWidth;
-		ctx.lineWidth = currentStrokeWidth;
-	});
+	if (strokeWidthSlider && strokeWidthValue) {
+		strokeWidthSlider.addEventListener("input", function () {
+			const width = parseInt(this.value);
+			if (toolSettings[currentTool]) {
+				toolSettings[currentTool].width = width;
+				strokeWidthValue.textContent = width;
+				updateContextFromCurrentTool();
+			}
+		});
+	}
 
 	// Undo button
 	document.getElementById("undo-btn").addEventListener("click", undo);
@@ -130,6 +223,53 @@ function setupToolbarListeners() {
 
 	// Clear button
 	document.getElementById("clear-btn").addEventListener("click", clearCanvas);
+
+	// Export button
+	const exportBtn = document.getElementById("export-btn");
+	if (exportBtn) {
+		exportBtn.addEventListener("click", exportCanvas);
+	}
+}
+
+function updateToolSettingsUI() {
+	// Update UI to show settings for the current tool
+	document.querySelectorAll(".tool-settings").forEach((settingsPanel) => {
+		const tool = settingsPanel.getAttribute("data-tool");
+		if (tool === currentTool) {
+			settingsPanel.classList.remove("hidden");
+		} else {
+			settingsPanel.classList.add("hidden");
+		}
+	});
+
+	// Update the displayed values to match current tool settings
+	if (toolSettings[currentTool]) {
+		const settings = toolSettings[currentTool];
+
+		// Update color picker if it exists
+		const colorPicker = document.querySelector(
+			`.tool-color-picker[data-tool="${currentTool}"]`
+		);
+		if (colorPicker && settings.color) {
+			colorPicker.value = settings.color;
+		}
+
+		// Update width slider if it exists
+		const widthSlider = document.querySelector(
+			`.tool-width-slider[data-tool="${currentTool}"]`
+		);
+		if (widthSlider && settings.width) {
+			widthSlider.value = settings.width;
+
+			// Update displayed value
+			const valueDisplay = document.getElementById(
+				`${currentTool}-width-value`
+			);
+			if (valueDisplay) {
+				valueDisplay.textContent = settings.width;
+			}
+		}
+	}
 }
 
 function setupCanvasListeners() {
@@ -160,13 +300,30 @@ function startDrawing(e) {
 		return;
 	}
 
+	if (currentTool === "eraser") {
+		ctx.globalCompositeOperation = "destination-out";
+		ctx.beginPath();
+		ctx.moveTo(lastX, lastY);
+		return;
+	}
+
+	if (currentTool === "shape") {
+		isDrawingShape = true;
+		startX = coords.x;
+		startY = coords.y;
+
+		// Store the current canvas state for redrawing during shape preview
+		shapePreviewData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+		return;
+	}
+
 	// Start a new path for pen and marker
 	ctx.beginPath();
 	ctx.moveTo(lastX, lastY);
 
-	// For marker, we do a single dot if the user just clicks
+	// For marker, we use semi-transparency
 	if (currentTool === "marker") {
-		ctx.globalAlpha = 0.3; // Semi-transparent for marker
+		ctx.globalAlpha = 0.1; // Semi-transparent for marker
 		ctx.lineTo(lastX + 0.1, lastY + 0.1); // Tiny movement to ensure a dot appears
 		ctx.stroke();
 	} else {
@@ -185,26 +342,104 @@ function draw(e) {
 	const currentX = coords.x;
 	const currentY = coords.y;
 
-	if (currentTool === "pen") {
-		// Regular pen drawing
+	if (currentTool === "eraser") {
 		ctx.lineTo(currentX, currentY);
 		ctx.stroke();
-	} else if (currentTool === "marker") {
-		// Marker with transparency
-		ctx.lineTo(currentX, currentY);
-		ctx.stroke();
+		lastX = currentX;
+		lastY = currentY;
+		return;
 	}
 
-	// Update last position
-	lastX = currentX;
-	lastY = currentY;
+	if (currentTool === "pen" || currentTool === "marker") {
+		// Regular pen/marker drawing
+		ctx.lineTo(currentX, currentY);
+		ctx.stroke();
+
+		// Update last position
+		lastX = currentX;
+		lastY = currentY;
+		return;
+	}
+
+	if (currentTool === "shape" && isDrawingShape) {
+		// Restore the original canvas state before drawing the shape preview
+		if (shapePreviewData) {
+			ctx.putImageData(shapePreviewData, 0, 0);
+		}
+
+		const w = currentX - startX;
+		const h = currentY - startY;
+
+		// Draw the shape preview
+		ctx.beginPath();
+
+		// Use the shape-specific settings
+		ctx.strokeStyle = toolSettings.shape.color;
+		ctx.lineWidth = toolSettings.shape.width;
+		ctx.globalAlpha = 1.0;
+
+		if (currentShape === "rectangle") {
+			ctx.strokeRect(startX, startY, w, h);
+		} else if (currentShape === "circle") {
+			const radius = Math.sqrt(w * w + h * h);
+			ctx.arc(startX, startY, radius, 0, 2 * Math.PI);
+			ctx.stroke();
+		} else if (currentShape === "arrow") {
+			drawArrow(startX, startY, currentX, currentY);
+		}
+
+		return;
+	}
+}
+
+function drawArrow(fromX, fromY, toX, toY) {
+	// Calculate arrow properties
+	const headLength = 15;
+	const angle = Math.atan2(toY - fromY, toX - fromX);
+
+	// Draw the line
+	ctx.beginPath();
+	ctx.moveTo(fromX, fromY);
+	ctx.lineTo(toX, toY);
+	ctx.stroke();
+
+	// Draw the arrow head
+	ctx.beginPath();
+	ctx.moveTo(toX, toY);
+	ctx.lineTo(
+		toX - headLength * Math.cos(angle - Math.PI / 6),
+		toY - headLength * Math.sin(angle - Math.PI / 6)
+	);
+	ctx.lineTo(
+		toX - headLength * Math.cos(angle + Math.PI / 6),
+		toY - headLength * Math.sin(angle + Math.PI / 6)
+	);
+	ctx.closePath();
+	ctx.fillStyle = toolSettings.shape.color;
+	ctx.fill();
 }
 
 function stopDrawing() {
-	if (isDrawing) {
-		isDrawing = false;
-		saveToHistory();
+	if (!isDrawing) return;
+
+	isDrawing = false;
+
+	// Special handling for shape tool
+	if (currentTool === "shape" && isDrawingShape) {
+		isDrawingShape = false;
+		shapePreviewData = null;
 	}
+
+	// Reset composite operation for eraser
+	if (currentTool === "eraser") {
+		ctx.globalCompositeOperation = "source-over";
+	}
+
+	// Reset global alpha for marker
+	ctx.globalAlpha = 1.0;
+
+	// Save to history
+	saveToHistory();
 }
 
 function getCoordinates(e) {
@@ -237,53 +472,177 @@ function createTextInput(x, y) {
 		finishTextInput();
 	}
 
-	// Create a new input element
-	textInput = document.createElement("input");
-	textInput.type = "text";
-	textInput.className = "absolute bg-transparent border border-gray-400 p-1";
-	textInput.style.left = `${x}px`;
-	textInput.style.top = `${y}px`;
-	textInput.style.color = currentColor;
-	textInput.style.fontSize = `${currentStrokeWidth * 2}px`;
-	textInput.style.minWidth = "100px";
+	// Create a container for the text input and resize handles
+	const textContainer = document.createElement("div");
+	textContainer.className =
+		"absolute border border-blue-500 p-1 rounded resize";
+	textContainer.style.left = `${x + canvas.offsetLeft}px`;
+	textContainer.style.top = `${y + canvas.offsetTop}px`;
+	textContainer.style.minWidth = "150px";
+	textContainer.style.minHeight = "40px";
+	textContainer.style.zIndex = "1000";
+	textContainer.style.background = "white";
+	textContainer.style.resize = "both";
+	textContainer.style.overflow = "auto";
+	textContainer.style.cursor = "move";
 
-	// Add it to container
-	document.getElementById("canvas-container").appendChild(textInput);
+	// Create the text area
+	textInput = document.createElement("textarea");
+	textInput.className = "w-full h-full border-none outline-none resize-none";
+	textInput.style.color = toolSettings.text.color;
+	textInput.style.fontSize = `${toolSettings.text.size}px`;
+	textInput.style.fontFamily = "sans-serif";
+	textInput.style.background = "transparent";
+	textInput.style.cursor = "text";
 
-	// Focus it
+	// Add the text area to the container
+	textContainer.appendChild(textInput);
+
+	// Add the container to the document
+	document.body.appendChild(textContainer);
+
+	// Focus the text area
 	textInput.focus();
 
-	// Handle Enter key or loss of focus
+	// Add drag functionality
+	textContainer.addEventListener("mousedown", startDraggingText);
+	document.addEventListener("mousemove", dragText);
+	document.addEventListener("mouseup", stopDraggingText);
+
+	// Touch support for dragging
+	textContainer.addEventListener(
+		"touchstart",
+		handleTouch(startDraggingText)
+	);
+	document.addEventListener("touchmove", handleTouch(dragText));
+	document.addEventListener("touchend", handleTouch(stopDraggingText));
+
+	// Save reference to container
+	textInput.container = textContainer;
+
+	// Handle Enter + Ctrl key for submission
 	textInput.addEventListener("keydown", function (e) {
-		if (e.key === "Enter") {
+		if (e.key === "Enter" && e.ctrlKey) {
 			finishTextInput();
 		}
 	});
 
-	textInput.addEventListener("blur", finishTextInput);
+	// Add a floating toolbar for the text box
+	const textToolbar = document.createElement("div");
+	textToolbar.className =
+		"absolute top-0 right-0 flex bg-white border border-gray-300 rounded-bl px-2 py-1";
+	textToolbar.style.transform = "translateY(-100%)";
+
+	// Add a "Done" button
+	const doneButton = document.createElement("button");
+	doneButton.innerHTML = "✓";
+	doneButton.className = "mr-2 text-green-600 hover:text-green-800";
+	doneButton.title = "Done (Ctrl+Enter)";
+	doneButton.addEventListener("click", finishTextInput);
+	textToolbar.appendChild(doneButton);
+
+	// Add a "Cancel" button
+	const cancelButton = document.createElement("button");
+	cancelButton.innerHTML = "✕";
+	cancelButton.className = "text-red-600 hover:text-red-800";
+	cancelButton.title = "Cancel";
+	cancelButton.addEventListener("click", function () {
+		textInput.value = "";
+		finishTextInput();
+	});
+	textToolbar.appendChild(cancelButton);
+
+	textContainer.appendChild(textToolbar);
+}
+
+function startDraggingText(e) {
+	if (e.target === textInput) return; // Don't drag when clicking on textarea
+
+	isDraggingText = true;
+
+	const container = textInput.container;
+	const containerRect = container.getBoundingClientRect();
+
+	// Calculate offset between mouse position and container position
+	if (e.type.includes("touch")) {
+		const touch = e.touches[0] || e.changedTouches[0];
+		textDragOffset.x = touch.clientX - containerRect.left;
+		textDragOffset.y = touch.clientY - containerRect.top;
+	} else {
+		textDragOffset.x = e.clientX - containerRect.left;
+		textDragOffset.y = e.clientY - containerRect.top;
+	}
+
+	e.preventDefault();
+}
+
+function dragText(e) {
+	if (!isDraggingText || !textInput || !textInput.container) return;
+
+	let clientX, clientY;
+	if (e.type.includes("touch")) {
+		const touch = e.touches[0] || e.changedTouches[0];
+		clientX = touch.clientX;
+		clientY = touch.clientY;
+	} else {
+		clientX = e.clientX;
+		clientY = e.clientY;
+	}
+
+	const container = textInput.container;
+	container.style.left = `${clientX - textDragOffset.x}px`;
+	container.style.top = `${clientY - textDragOffset.y}px`;
+
+	e.preventDefault();
+}
+
+function stopDraggingText() {
+	isDraggingText = false;
 }
 
 function finishTextInput() {
-	if (!textInput) return;
+	if (!textInput || !textInput.container) return;
 
-	const text = textInput.value.trim();
-	if (text) {
-		// Draw the text to canvas
-		ctx.font = `${currentStrokeWidth * 2}px Arial`;
-		ctx.fillStyle = currentColor;
-		ctx.fillText(
-			text,
-			parseInt(textInput.style.left),
-			parseInt(textInput.style.top) + parseInt(textInput.style.fontSize)
-		);
+	const text = textInput.value;
 
-		// Save state to history
+	if (text.trim() !== "") {
+		// Calculate position relative to canvas
+		const container = textInput.container;
+		const containerRect = container.getBoundingClientRect();
+		const canvasRect = canvas.getBoundingClientRect();
+
+		const x = containerRect.left - canvasRect.left;
+		const y = containerRect.top - canvasRect.top;
+
+		// Get font settings
+		ctx.font = `${toolSettings.text.size}px sans-serif`;
+		ctx.fillStyle = toolSettings.text.color;
+		ctx.textBaseline = "top";
+
+		// Handle multiline text
+		const lineHeight = toolSettings.text.size * 1.2;
+		const lines = text.split("\n");
+
+		lines.forEach((line, i) => {
+			ctx.fillText(line, x, y + i * lineHeight);
+		});
+
 		saveToHistory();
 	}
 
-	// Remove the input
-	textInput.parentNode.removeChild(textInput);
+	// Remove container and cleanup
+	if (textInput.container) {
+		textInput.container.remove();
+	}
+
+	// Remove event listeners
+	document.removeEventListener("mousemove", dragText);
+	document.removeEventListener("mouseup", stopDraggingText);
+	document.removeEventListener("touchmove", handleTouch(dragText));
+	document.removeEventListener("touchend", handleTouch(stopDraggingText));
+
 	textInput = null;
+	isDraggingText = false;
 }
 
 function clearCanvas() {
@@ -373,4 +732,11 @@ function debounce(func, wait) {
 		clearTimeout(timeout);
 		timeout = setTimeout(() => func.apply(context, args), wait);
 	};
+}
+
+function exportCanvas() {
+	const link = document.createElement("a");
+	link.download = "drawing.png";
+	link.href = canvas.toDataURL();
+	link.click();
 }
