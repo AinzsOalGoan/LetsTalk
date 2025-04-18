@@ -115,5 +115,5 @@ app.use((err, req, res, next) => {
 
 // Start server
 app.listen(port, () => {
-    console.log(`App is running on port ${port}`);
+    console.log(`App is running on port ${port} http://localhost:${port}/home`);
 });
