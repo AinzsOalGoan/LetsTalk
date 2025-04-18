@@ -20,7 +20,7 @@ router.get('/login', userController.renderLogin)
 router.get('/logout',isLoggedIn, userController.logoutUser);
 
 //profilr routes
-router.get('/profile',isLoggedIn,userController.seeProfile)
+// router.get('/profile',isLoggedIn,userController.seeProfile)
 
 
 module.exports = router;

@@ -11,7 +11,7 @@ const methodOverride = require('method-override');
 const helmet = require('helmet');
 
 // Models
-// const User = require('./models/User');
+const User = require('./models/UserSchema');
 
 // Variables
 const mongo_url = process.env.MONGO_URL || 'mongodb://127.0.0.1:27017/InterviewApp'
@@ -81,11 +81,11 @@ app.use(
 );
 
 // Initialize Passport
-// app.use(passport.initialize());
-// app.use(passport.session());
-// passport.use(new LocalStrategy(User.authenticate()));
-// passport.serializeUser(User.serializeUser());
-// passport.deserializeUser(User.deserializeUser());
+app.use(passport.initialize());
+app.use(passport.session());
+passport.use(new LocalStrategy(User.authenticate()));
+passport.serializeUser(User.serializeUser());
+passport.deserializeUser(User.deserializeUser());
 
 app.use((req, res, next) => {
     res.locals.user = req.user || null; // Make user available in all EJS views

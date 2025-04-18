@@ -9,15 +9,16 @@ module.exports.renderLogin = (req, res) => {
 // Register user
 module.exports.registerUser = async (req, res, next) => {
     try {
-        const { username, password } = req.body;
-        const user = new User({ username });
+        const { username, password, fullName } = req.body; // collect fullName from form
+        const user = new User({ username, fullName }); // pass fullName here
         const registeredUser = await User.register(user, password);
         req.login(registeredUser, (err) => {
-            if (err) return next(err); // Pass error to the error handler
+            if (err) return next(err);
             res.redirect('/home');
         });
     } catch (err) {
-        next(err); // Pass error to the error handler
+        console.error("Registration Error:", err); // for debugging
+        next(err);
     }
 }
 
