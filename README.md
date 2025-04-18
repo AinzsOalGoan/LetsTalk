@@ -9,7 +9,7 @@ Anirban :
 
 
 Shaswata: main task (update readme everyday, Ai part, extra fetures, suggest improvement)
- 1st week - Create and display the live job roles according to the resume ## Working
+ 1st week - Create and display the live job roles according to the resume(NO AI involved) ## Done
  2nd week - intergate this start working on AI voice interview ## Yet to do
  3rd week -
 
