@@ -92,3 +92,4 @@ if __name__ == "__main__":
         print_jobs(top_jobs)
     else:
         print("❗ Could not detect job role. Try updating the keyword list or resume format.")
+

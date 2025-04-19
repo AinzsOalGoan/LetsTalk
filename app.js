@@ -29,6 +29,7 @@ mongoose.connect(mongo_url)
 app.engine('ejs', ejsMate);
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
+path.join(__dirname, "..", "C:\Users\anirb\Downloads\my-folder\files\Anirban Santra.pdf")
 
 // Middleware
 app.use(express.static(path.join(__dirname, 'public')));
