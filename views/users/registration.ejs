@@ -1,0 +1,26 @@
+<form action="/users/register" method="POST" enctype="multipart/form-data">
+	<input type="text" name="username" placeholder="Username (Email)" required>
+	<input type="password" name="password" placeholder="Password" required>
+	<input type="text" name="fullName" placeholder="Full Name" required>
+	<input type="email" name="email" placeholder="Email" required>
+	<input type="date" name="dob">
+	<select name="gender">
+		<option value="Male">Male</option>
+		<option value="Female">Female</option>
+		<option value="Other">Other</option>
+	</select>
+	<input type="text" name="phone" placeholder="Phone Number">
+	<select name="role">
+		<option value="user" selected>User</option>
+		<option value="recruiter">Recruiter</option>
+	</select>
+	<input type="text" name="city" placeholder="City">
+	<input type="text" name="state" placeholder="State">
+	<input type="text" name="country" placeholder="Country">
+	<input type="text" name="github" placeholder="GitHub Profile">
+	<input type="text" name="linkedin" placeholder="LinkedIn Profile">
+	<input type="text" name="portfolio" placeholder="Personal Portfolio">
+	<input type="file" name="profileImage">
+	<input type="file" name="resumeFile">
+	<button type="submit">Register</button>
+</form>

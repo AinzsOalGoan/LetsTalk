@@ -1,29 +1,41 @@
-const express = require('express');
-const passport = require('passport');
+const express = require("express");
+const passport = require("passport");
 const router = express.Router();
-const userController = require('../controllers/userController.js');
-const { isLoggedIn } = require('../middlewares/isLoggedIn.js');
-const { upload, handleFileUpload } = require("../utils/cloudinary.js");
+const userController = require("../controllers/userController");
+const { isLoggedIn } = require("../middlewares/isLoggedIn");
+const multer = require("multer");
 
-//register
-router.get('/register', userController.renderRegister)
-      .post('/register', userController.registerUser);
+// Setup multer
+const storage = multer.diskStorage({
+	destination: function (req, file, cb) {
+		if (file.fieldname === "profileImage") cb(null, "uploads/profileImages/");
+		else if (file.fieldname === "resumeFile") cb(null, "uploads/resumes/");
+	},
+	filename: function (req, file, cb) {
+		cb(null, Date.now() + "-" + file.originalname);
+	}
+});
 
-// Render Login Form
-router.get('/login', userController.renderLogin)
-      .post('/login', passport.authenticate('local', {
-    failureRedirect: '/users/login',
-    successRedirect: '/home',
+const upload = multer({ storage });
+
+router.get("/register", userController.renderRegistration);
+
+router.post(
+	"/register",
+	upload.fields([
+		{ name: "profileImage", maxCount: 1 },
+		{ name: "resumeFile", maxCount: 1 }
+	]),
+	userController.registerUserWithDetails
+);
+
+router.get("/login", userController.renderLogin);
+
+router.post("/login", passport.authenticate("local", {
+	failureRedirect: "/users/login",
+	successRedirect: "/home"
 }));
 
-// Logout Route
-router.get('/logout',isLoggedIn, userController.logoutUser);
-
-// Route for uploading a single file (e.g., profile image) [use this as you wish]
-// router.post("/upload", upload.single("profileImage"), handleFileUpload);
-
-//profilr routes
-// router.get('/profile',isLoggedIn,userController.seeProfile)
-
+router.get("/logout", isLoggedIn, userController.logoutUser);
 
 module.exports = router;

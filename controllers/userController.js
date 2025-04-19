@@ -1,88 +1,84 @@
-const { asyncHandler } = require("../utils/asyncHandler");
-const { ApiError } = require("../utils/ApiError");
 const User = require("../models/UserSchema");
+const passport = require("passport");
 
-
-// Login Page
-module.exports.renderLogin = (req, res) => {
-	res.render("users/login.ejs");
+// Render Registration Form
+module.exports.renderRegistration = (req, res) => {
+	res.render("users/registration.ejs");
 };
 
-// Register Page
-module.exports.renderRegister = (req, res) => {
-	res.render("users/signup.ejs");
-};
-
-// Register user
-module.exports.registerUser = asyncHandler(async (req, res) => {
-	const { username, password, fullName } = req.body;
-	if (!username || !password || !fullName) {
-		throw new ApiError(400, "All fields are required.");
-	}
-
-	const user = new User({ username, fullName });
-
-	let registeredUser;
+// Register user with full details and file upload
+module.exports.registerUserWithDetails = async (req, res, next) => {
 	try {
-		registeredUser = await User.register(user, password);
-	} catch (err) {
-		throw new ApiError(500, "User registration failed", [], err.stack);
-	}
+		const {
+			username,
+			password,
+			fullName,
+			email,
+			dob,
+			gender,
+			phone,
+			role,
+			city,
+			state,
+			country,
+			github,
+			linkedin,
+			portfolio
+		} = req.body;
 
-	req.login(registeredUser, (err) => {
-		if (err) {
-			// Passing the error to the next middleware instead of throwing it
-			return next(
-				new ApiError(
-					500,
-					"Login after registration failed",
-					[],
-					err.stack
-				)
-			);
+		// Basic validation
+		if (!username || !password || !fullName || !email) {
+			return res.status(400).send("Required fields missing");
 		}
-		res.redirect("/home");
-	});
-});
+
+		const newUser = new User({
+			username,
+			fullName,
+			email,
+			dob,
+			gender,
+			phone,
+			role,
+			location: { city, state, country },
+			portfolioLinks: { github, linkedin, portfolio },
+		});
+
+		// File handling
+		if (req.files?.profileImage?.[0]) {
+			newUser.profileImage = req.files.profileImage[0].path;
+		}
+
+		if (req.files?.resumeFile?.[0]) {
+			newUser.resumeFile = req.files.resumeFile[0].path;
+		}
+
+		const registeredUser = await User.register(newUser, password);
+
+		req.login(registeredUser, (err) => {
+			if (err) {
+				console.error("Auto-login error:", err);
+				return res.redirect("/users/login");
+			}
+			res.redirect("/home");
+		});
+	} catch (err) {
+		console.error("Registration error:", err);
+		res.status(500).send("Something went wrong during registration.");
+	}
+};
 
 // Logout
 module.exports.logoutUser = (req, res, next) => {
 	req.logout((err) => {
 		if (err) {
-			// Passing the error to the next middleware instead of throwing it
-			return next(new ApiError(500, "Logout failed", [], err.stack));
+			console.error("Logout error:", err);
+			return res.status(500).send("Logout failed.");
 		}
 		res.redirect("/home");
 	});
 };
 
-// See profile [remove the skillissue code part]
-module.exports.seeProfile = asyncHandler(async (req, res) => {
-	const user = await User.findById(req.user._id).lean();
-
-	if (!user) {
-		throw new ApiError(404, "User not found");
-	}
-
-	const problemsSolved = await Promise.all(
-		user.problemsSolved.map(async (solved) => {
-			const problem = await Problem.findById(solved.problemId); // Ensure Problem model is imported
-			return {
-				problemId: solved.problemId,
-				title: problem ? problem.title : "Unknown Title",
-			};
-		})
-	);
-
-	res.render("users/profile", {
-		user,
-		username: user.username,
-		profileLinks: user.profileLinks,
-		stats: user.stats,
-		points: user.points,
-		totalSubmissions: user.totalSubmissions,
-		problemsSolved,
-		likedProblems: user.likedProblems,
-		Country: user.Country,
-	});
-});
+// Login Page
+module.exports.renderLogin = (req, res) => {
+	res.render("users/login.ejs");
+};
