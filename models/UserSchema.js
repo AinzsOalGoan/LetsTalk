@@ -1,5 +1,5 @@
-const mongoose = require("mongoose");
-const passportLocalMongoose = require("passport-local-mongoose");
+const mongoose = require('mongoose');
+const passportLocalMongoose = require('passport-local-mongoose');
 
 const userSchema = new mongoose.Schema({
     // 🔐 Auth details
@@ -84,4 +84,4 @@ const userSchema = new mongoose.Schema({
 // ✨ Plugin for handling hashed passwords
 userSchema.plugin(passportLocalMongoose);
 
-module.exports = mongoose.model("User", userSchema);
+module.exports = mongoose.model('User', userSchema);
