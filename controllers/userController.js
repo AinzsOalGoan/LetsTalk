@@ -1,66 +1,88 @@
+const { asyncHandler } = require("../utils/asyncHandler");
+const { ApiError } = require("../utils/ApiError");
+const User = require("../models/UserSchema");
 
-const User = require('../models/UserSchema')
 
 // Login Page
 module.exports.renderLogin = (req, res) => {
-    res.render('users/login.ejs');
+	res.render("users/login.ejs");
+};
+
+// Register Page
+module.exports.renderRegister = (req, res) => {
+	res.render("users/signup.ejs");
 };
 
 // Register user
-module.exports.registerUser = async (req, res, next) => {
-    try {
-        const { username, password, fullName } = req.body; // collect fullName from form
-        const user = new User({ username, fullName }); // pass fullName here
-        const registeredUser = await User.register(user, password);
-        req.login(registeredUser, (err) => {
-            if (err) return next(err);
-            res.redirect('/home');
-        });
-    } catch (err) {
-        console.error("Registration Error:", err); // for debugging
-        next(err);
-    }
-}
+module.exports.registerUser = asyncHandler(async (req, res) => {
+	const { username, password, fullName } = req.body;
+	if (!username || !password || !fullName) {
+		throw new ApiError(400, "All fields are required.");
+	}
 
-// Register page
-module.exports.renderRegister = (req, res) => {
-    res.render('users/signup.ejs');
-};
+	const user = new User({ username, fullName });
+
+	let registeredUser;
+	try {
+		registeredUser = await User.register(user, password);
+	} catch (err) {
+		throw new ApiError(500, "User registration failed", [], err.stack);
+	}
+
+	req.login(registeredUser, (err) => {
+		if (err) {
+			// Passing the error to the next middleware instead of throwing it
+			return next(
+				new ApiError(
+					500,
+					"Login after registration failed",
+					[],
+					err.stack
+				)
+			);
+		}
+		res.redirect("/home");
+	});
+});
 
 // Logout
 module.exports.logoutUser = (req, res, next) => {
-    req.logout((err) => {
-        if (err) return next(err); // Pass error to the error handler
-        res.redirect('/home');
-    });
-}
+	req.logout((err) => {
+		if (err) {
+			// Passing the error to the next middleware instead of throwing it
+			return next(new ApiError(500, "Logout failed", [], err.stack));
+		}
+		res.redirect("/home");
+	});
+};
 
-module.exports.seeProfile = async (req, res, next) => {
-    try {
-        let user = await User.findById(req.user._id).lean(); // Ensure data is fully fetched
+// See profile [remove the skillissue code part]
+module.exports.seeProfile = asyncHandler(async (req, res) => {
+	const user = await User.findById(req.user._id).lean();
 
-        console.log("User Stats:", user.stats); // Debugging log
+	if (!user) {
+		throw new ApiError(404, "User not found");
+	}
 
-        let problemsSolved = await Promise.all(user.problemsSolved.map(async (solved) => {
-            let problem = await Problem.findById(solved.problemId);
-            return {
-                problemId: solved.problemId,
-                title: problem ? problem.title : 'Unknown Title'
-            };
-        }));
+	const problemsSolved = await Promise.all(
+		user.problemsSolved.map(async (solved) => {
+			const problem = await Problem.findById(solved.problemId); // Ensure Problem model is imported
+			return {
+				problemId: solved.problemId,
+				title: problem ? problem.title : "Unknown Title",
+			};
+		})
+	);
 
-        res.render('users/profile', {
-            user,
-            username: user.username,
-            profileLinks: user.profileLinks,
-            stats: user.stats,  // Explicitly pass stats
-            points: user.points,
-            totalSubmissions: user.totalSubmissions,
-            problemsSolved,
-            likedProblems: user.likedProblems,
-            Country: user.Country
-        });
-    } catch (err) {
-        next(err);
-    }
-}
+	res.render("users/profile", {
+		user,
+		username: user.username,
+		profileLinks: user.profileLinks,
+		stats: user.stats,
+		points: user.points,
+		totalSubmissions: user.totalSubmissions,
+		problemsSolved,
+		likedProblems: user.likedProblems,
+		Country: user.Country,
+	});
+});
