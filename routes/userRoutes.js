@@ -2,7 +2,7 @@ const express = require("express");
 const passport = require("passport");
 const router = express.Router();
 const userController = require("../controllers/userController");
-const { isLoggedIn } = require("../middlewares/isLoggedIn");
+const { isLoggedIn } = require("../middlewares/isLoggedin");
 const multer = require("multer");
 
 // Setup multer
@@ -35,6 +35,8 @@ router.post("/login", passport.authenticate("local", {
 	failureRedirect: "/users/login",
 	successRedirect: "/home"
 }));
+
+router.get('/profile', isLoggedIn, userController.getProfile);
 
 router.get("/logout", isLoggedIn, userController.logoutUser);
 

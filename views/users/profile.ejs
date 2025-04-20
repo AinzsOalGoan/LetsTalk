@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title><%= user.fullName %>'s Profile</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 2rem; background: #f9f9f9; }
+        .box { background: white; padding: 2rem; border-radius: 10px; box-shadow: 0 0 10px #ddd; margin-bottom: 2rem; }
+        h2 { color: #333; }
+    </style>
+</head>
+<body>
+
+    <div class="box">
+        <h2>👤 Basic Info</h2>
+        <p><strong>Name:</strong> <%= user.fullName %></p>
+        <p><strong>Email:</strong> <%= user.email %></p>
+        <p><strong>Role:</strong> <%= user.role %></p>
+        <p><strong>Phone:</strong> <%= user.phone || 'Not Provided' %></p>
+        <p><strong>Location:</strong>
+            <%= user.location?.city || '' %>,
+            <%= user.location?.state || '' %>,
+            <%= user.location?.country || '' %>
+        </p>
+    </div>
+
+    <% if (user.role === 'recruiter'&& recruiterDetails) { %>
+        <div class="box">
+            <h2>🏢 Company Info</h2>
+            <p><strong>Company Name:</strong> <%= recruiterDetails.companyDetails?.name || 'N/A' %></p>
+            <p><strong>Website:</strong> <%= recruiterDetails.companyDetails?.website || 'N/A' %></p>
+            <p><strong>Description:</strong> <%= recruiterDetails.companyDetails?.description || 'N/A' %></p>
+            <p><strong>Location:</strong> <%= recruiterDetails.companyDetails?.location || 'N/A' %></p>
+            <p><strong>Industry:</strong> <%= recruiterDetails.companyDetails?.industry || 'N/A' %></p>
+            <p><strong>Size:</strong> <%= recruiterDetails.companyDetails?.size || 'N/A' %></p>
+            <p><strong>Designation:</strong> <%= recruiterDetails.designation || 'N/A' %></p>
+        </div>
+
+        <div class="box">
+            <h2>📄 Jobs Posted</h2>
+            <% if (!recruiterDetails.jobsPosted?.length) { %>
+                <p>No jobs posted yet.</p>
+            <% } else { %>
+                <ul>
+                    <% recruiterDetails.jobsPosted.forEach(job => { %>
+                        <li><strong><%= job.title || 'Untitled' %></strong> - <%= job.location || 'Unknown' %></li>
+                    <% }) %>
+                </ul>
+            <% } %>
+        </div>
+
+        <div class="box">
+            <h2>🌀 Rounds Created</h2>
+            <% if (!recruiterDetails.Rounds?.length) { %>
+                <p>No rounds added.</p>
+            <% } else { %>
+                <ul>
+                    <% recruiterDetails.Rounds.forEach(round => { %>
+                        <li><%= round.name || 'Untitled' %> - <%= round.type || 'Unknown' %></li>
+                    <% }) %>
+                </ul>
+            <% } %>
+        </div>
+
+    <% } else if (user.role === 'user') { %>
+        <div class="box">
+            <h2>📄 Resume Skills</h2>
+            <% if (!user.resumeExtractedData?.skills?.length) { %>
+                <p>No skills extracted.</p>
+            <% } else { %>
+                <ul>
+                    <% user.resumeExtractedData.skills.forEach(skill => { %>
+                        <li><%= skill %></li>
+                    <% }) %>
+                </ul>
+            <% } %>
+        </div>
+
+        <div class="box">
+            <h2>🧾 Applied Jobs</h2>
+            <% if (!user.appliedJobs?.length) { %>
+                <p>You haven't applied to any jobs yet.</p>
+            <% } else { %>
+                <ul>
+                    <% user.appliedJobs.forEach(app => { %>
+                        <li>
+                            Job ID: <%= app.jobId || 'N/A' %> |
+                            Status: <%= app.status || 'Pending' %> |
+                            Applied At: <%= new Date(app.appliedAt).toLocaleDateString() %>
+                        </li>
+                    <% }) %>
+                </ul>
+            <% } %>
+        </div>
+    <% } %>
+
+</body>
+</html>

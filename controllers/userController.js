@@ -1,12 +1,13 @@
 const User = require("../models/UserSchema");
+const Recruiter = require("../models/RecruterSchema");
 const passport = require("passport");
 
-// Render Registration Form
+// GET: Registration Page
 module.exports.renderRegistration = (req, res) => {
 	res.render("users/registration.ejs");
 };
 
-// Register user with full details and file upload
+// POST: Register User with Details
 module.exports.registerUserWithDetails = async (req, res, next) => {
 	try {
 		const {
@@ -26,7 +27,6 @@ module.exports.registerUserWithDetails = async (req, res, next) => {
 			portfolio
 		} = req.body;
 
-		// Basic validation
 		if (!username || !password || !fullName || !email) {
 			return res.status(400).send("Required fields missing");
 		}
@@ -52,13 +52,11 @@ module.exports.registerUserWithDetails = async (req, res, next) => {
 			newUser.resumeFile = req.files.resumeFile[0].path;
 		}
 
+		// Register user (hash password)
 		const registeredUser = await User.register(newUser, password);
 
 		req.login(registeredUser, (err) => {
-			if (err) {
-				console.error("Auto-login error:", err);
-				return res.redirect("/users/login");
-			}
+			if (err) return next(err);
 			res.redirect("/home");
 		});
 	} catch (err) {
@@ -67,18 +65,40 @@ module.exports.registerUserWithDetails = async (req, res, next) => {
 	}
 };
 
-// Logout
+// GET: Login Page
+module.exports.renderLogin = (req, res) => {
+	res.render("users/login.ejs");
+};
+
+// GET: Logout
 module.exports.logoutUser = (req, res, next) => {
 	req.logout((err) => {
-		if (err) {
-			console.error("Logout error:", err);
-			return res.status(500).send("Logout failed.");
-		}
+		if (err) return next(err);
 		res.redirect("/home");
 	});
 };
 
-// Login Page
-module.exports.renderLogin = (req, res) => {
-	res.render("users/login.ejs");
+// GET: User Profile Page
+module.exports.getProfile = async (req, res) => {
+	try {
+		const user = req.user;
+
+		if (!user) return res.status(401).send("Unauthorized");
+
+		if (user.role === "recruiter") {
+			const recruiterDetails = await Recruiter.findOne({ user: user._id })
+				.populate("jobsPosted")
+				.populate("Rounds");
+
+			return res.render("users/profile", { user, recruiterDetails });
+		} else {
+			await user.populate("appliedJobs.jobId");
+
+			return res.render("users/profile", { user });
+		}
+	} catch (err) {
+		console.error("Error fetching profile:", err);
+		res.status(500).send("Error fetching profile");
+	}
 };
+
