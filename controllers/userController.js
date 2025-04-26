@@ -1,6 +1,7 @@
 const User = require("../models/UserSchema");
 const Recruiter = require("../models/RecruterSchema");
 const passport = require("passport");
+const { uploadOnCloudinary } = require("../utils/cloudinary");
 
 // GET: Registration Page
 module.exports.renderRegistration = (req, res) => {
@@ -24,7 +25,7 @@ module.exports.registerUserWithDetails = async (req, res, next) => {
 			country,
 			github,
 			linkedin,
-			portfolio
+			portfolio,
 		} = req.body;
 
 		if (!username || !password || !fullName || !email) {
@@ -42,16 +43,34 @@ module.exports.registerUserWithDetails = async (req, res, next) => {
 			location: { city, state, country },
 			portfolioLinks: { github, linkedin, portfolio },
 		});
+		// Handle file uploads if present
+		if (req.files) {
+			// Handle profile image
+			if (req.files.profileImage && req.files.profileImage[0]) {
+				const profileImageResult = await uploadOnCloudinary(
+					req.files.profileImage[0].path
+				);
+				if (profileImageResult) {
+					newUser.profileImage = {
+						url: profileImageResult.secure_url,
+						filename: profileImageResult.public_id,
+					};
+				}
+			}
 
-		// File handling
-		if (req.files?.profileImage?.[0]) {
-			newUser.profileImage = req.files.profileImage[0].path;
+			// Handle resume file
+			if (req.files.resumeFile && req.files.resumeFile[0]) {
+				const resumeFileResult = await uploadOnCloudinary(
+					req.files.resumeFile[0].path
+				);
+				if (resumeFileResult) {
+					newUser.resumeFile = {
+						url: resumeFileResult.secure_url,
+						filename: resumeFileResult.public_id,
+					};
+				}
+			}
 		}
-
-		if (req.files?.resumeFile?.[0]) {
-			newUser.resumeFile = req.files.resumeFile[0].path;
-		}
-
 		// Register user (hash password)
 		const registeredUser = await User.register(newUser, password);
 
@@ -101,4 +120,3 @@ module.exports.getProfile = async (req, res) => {
 		res.status(500).send("Error fetching profile");
 	}
 };
-

@@ -1,5 +1,5 @@
 const multer = require("multer");
-const { uploadOnCloudinary } = require("../utils/coudinary"); // Assuming you already have this function to upload to Cloudinary
+const { uploadOnCloudinary } = require("../utils/cloudinary"); // Assuming you already have this function to upload to Cloudinary
 const User = require("../models/UserSchema"); // Assuming this is where the user schema is defined
 const fs = require("fs");
 
