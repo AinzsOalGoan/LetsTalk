@@ -18,41 +18,61 @@ exports.createJobWithRounds = async (req, res) => {
         const recruiterId = req.user._id;
         const recruiter = await Recruiter.findOne({ user: recruiterId });
 
-        const { jobTitle, jobDescription, selectedRounds } = req.body;
+        // ✅ Destructure all required fields from form
+        let {
+            jobTitle,
+            jobDescription,
+            company,
+            location,
+            salaryRange,
+            selectedRounds
+        } = req.body;
 
-        // Step 1: Create Job
+        // ✅ Ensure selectedRounds is always an array
+        if (!Array.isArray(selectedRounds)) {
+            selectedRounds = [selectedRounds]; // convert string to array
+        }
+
+        // ✅ Step 1: Create Job with required fields
         const job = new Job({
             title: jobTitle,
             description: jobDescription,
+            company,
+            location,
+            salaryRange,
             recruiter: recruiter._id
         });
+
         await job.save();
 
-        // Step 2: Create rounds based on selection
+        // ✅ Step 2: Create rounds based on selection
         const roundDocs = [];
 
         for (const roundType of selectedRounds) {
             let roundDoc;
+
             switch (roundType) {
                 case 'MCQ':
-                    roundDoc = new McqRound({ job: job._id });
+                    roundDoc = new McqRound({ job: job._id, createdBy: recruiterId });
                     break;
                 case 'DSA':
-                    roundDoc = new DsaRound({ job: job._id });
+                    roundDoc = new DsaRound({ job: job._id, createdBy: recruiterId });
                     break;
                 case 'Grammar':
+                    // Uncomment if implemented
                     // roundDoc = new GrammarRound({ job: job._id });
                     break;
                 case 'Apti':
+                    // Uncomment if implemented
                     // roundDoc = new AptiRound({ job: job._id });
                     break;
-                // Add other rounds similarly
+                default:
+                    break;
             }
 
             if (roundDoc) {
                 await roundDoc.save();
 
-                // Step 3: Push into round array
                 roundDocs.push({
                     roundType,
                     roundRefId: roundDoc._id
@@ -60,7 +80,7 @@ exports.createJobWithRounds = async (req, res) => {
             }
         }
 
-        // Step 4: Create Round doc and link to Job
+        // ✅ Step 3: Save rounds array
         const fullRound = new Round({
             job: job._id,
             rounds: roundDocs
@@ -68,11 +88,12 @@ exports.createJobWithRounds = async (req, res) => {
 
         await fullRound.save();
 
-        // Link Round to Job
+        // ✅ Step 4: Link rounds back to job
         job.round = fullRound._id;
         await job.save();
 
         res.status(201).json({ message: 'Job and Rounds created.', job });
+
     } catch (err) {
         console.error('Error creating job with rounds:', err);
         res.status(500).json({ message: 'Server error' });
