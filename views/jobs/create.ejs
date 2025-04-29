@@ -1,0 +1,12 @@
+<form action="/job/create" method="POST">
+    <input type="text" name="jobTitle" placeholder="Job Title" required />
+    <textarea name="jobDescription" placeholder="Job Description"></textarea>
+
+    <label>Select Rounds:</label><br>
+    <input type="checkbox" name="selectedRounds" value="MCQ" /> MCQ<br>
+    <input type="checkbox" name="selectedRounds" value="DSA" /> DSA<br>
+    <input type="checkbox" name="selectedRounds" value="Grammar" /> Grammar<br>
+    <input type="checkbox" name="selectedRounds" value="Apti" /> Apti<br>
+
+    <button type="submit">Create Job</button>
+</form>

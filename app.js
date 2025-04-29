@@ -99,11 +99,13 @@ const indexRoutes = require('./routes/indexRoutes');
 const userRoutes = require('./routes/userRoutes')
 const jobSearchRoutes = require("./routes/jobsearch");
 const recruiterRoutes = require('./routes/recruiterRoutes')
+const jobRoutes = require('./routes/jobRoutes')
 
 app.use('/', indexRoutes);
 app.use('/users', userRoutes);
 app.use("/jobs", jobSearchRoutes);
 app.use('/recruiter', recruiterRoutes);
+app.use('/job', jobRoutes);
 
 // 404 Not Found Handler
 app.use((req, res, next) => {

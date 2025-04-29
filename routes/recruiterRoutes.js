@@ -5,7 +5,7 @@ const { isLoggedIn } = require('../middlewares/isLoggedin'); // your auth middle
 
 
 //render recruiter form
-router.get('/profile', isLoggedIn, recruiterController.renderRecruiterForm);
+router.get('/register', isLoggedIn, recruiterController.renderRecruiterForm);
 
 // POST or PUT Recruiter Profile
 router.post('/profile', isLoggedIn, recruiterController.createOrUpdateRecruiter);
