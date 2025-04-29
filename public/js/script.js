@@ -15,11 +15,24 @@ let toolSettings = {
 	eraser: { width: 20 },
 	shape: { color: "#000000", width: 3 },
 	text: { color: "#000000", size: 16 },
+	select: { color: "#0000ff", width: 1 }, // Selection border color and width
 };
 
 // Current shape being drawn
 let currentShape = "rectangle"; // or "circle", "arrow"
 let shapePreviewData = null; // Store canvas data for shape preview redrawing
+
+// Selection tool variables
+let isSelecting = false;
+let selectionStartX = 0;
+let selectionStartY = 0;
+let selectionBox = null;
+let selectedArea = null;
+let isDraggingSelection = false;
+let isResizingSelection = false;
+let resizeHandle = "";
+let lastSelectX = 0;
+let lastSelectY = 0;
 
 // History for undo/redo
 let history = [];
@@ -146,6 +159,14 @@ function setupToolbarListeners() {
 				// Remove input after blur event has had time to fire
 				if (textInput) finishTextInput();
 			}, 0);
+
+			// Update cursor based on selected tool
+			if (currentTool === "select") {
+				canvas.style.cursor = "crosshair";
+			} else {
+				canvas.style.cursor = "default";
+				removeSelectionBox();
+			}
 		});
 	});
 
@@ -283,9 +304,25 @@ function setupCanvasListeners() {
 	canvas.addEventListener("touchmove", handleTouch(draw));
 	canvas.addEventListener("touchend", handleTouch(stopDrawing));
 	canvas.addEventListener("touchcancel", handleTouch(stopDrawing));
+
+	// Key events for selection
+	document.addEventListener("keydown", function (e) {
+		if (selectionBox && currentTool === "select") {
+			if (e.key === "Delete" || e.key === "Backspace") {
+				removeSelectionBox();
+			} else if (e.key === "Escape") {
+				removeSelectionBox();
+			}
+		}
+	});
 }
 
 function startDrawing(e) {
+	if (currentTool === "select") {
+		startSelection(e);
+		return;
+	}
+
 	isDrawing = true;
 
 	// Get coordinates
@@ -332,6 +369,11 @@ function startDrawing(e) {
 }
 
 function draw(e) {
+	if (currentTool === "select" && isSelecting) {
+		updateSelection(e);
+		return;
+	}
+
 	if (!isDrawing) return;
 
 	// Prevent scrolling on touch devices
@@ -392,6 +434,451 @@ function draw(e) {
 	}
 }
 
+function stopDrawing() {
+	if (currentTool === "select" && isSelecting) {
+		finishSelection();
+		return;
+	}
+
+	if (!isDrawing) return;
+
+	isDrawing = false;
+
+	// Special handling for shape tool
+	if (currentTool === "shape" && isDrawingShape) {
+		isDrawingShape = false;
+		shapePreviewData = null;
+	}
+
+	// Reset composite operation for eraser
+	if (currentTool === "eraser") {
+		ctx.globalCompositeOperation = "source-over";
+	}
+
+	// Reset global alpha for marker
+	ctx.globalAlpha = 1.0;
+
+	// Save to history
+	saveToHistory();
+}
+
+// Selection Tool Functions
+function startSelection(e) {
+	removeSelectionBox();
+
+	isSelecting = true;
+	const coords = getCoordinates(e);
+	selectionStartX = coords.x;
+	selectionStartY = coords.y;
+
+	// Create a temporary selection box
+	selectionBox = document.createElement("div");
+	selectionBox.className = "selection-box";
+	selectionBox.style.position = "absolute";
+	selectionBox.style.border = "2px dashed " + toolSettings.select.color;
+	selectionBox.style.pointerEvents = "none";
+	selectionBox.style.left = selectionStartX + "px";
+	selectionBox.style.top = selectionStartY + "px";
+	selectionBox.style.width = "0";
+	selectionBox.style.height = "0";
+
+	document.getElementById("canvas-container").appendChild(selectionBox);
+}
+
+function updateSelection(e) {
+	if (!isSelecting) return;
+
+	const coords = getCoordinates(e);
+	const currentX = coords.x;
+	const currentY = coords.y;
+
+	const width = currentX - selectionStartX;
+	const height = currentY - selectionStartY;
+
+	// Update selection box dimensions
+	selectionBox.style.left = (width < 0 ? currentX : selectionStartX) + "px";
+	selectionBox.style.top = (height < 0 ? currentY : selectionStartY) + "px";
+	selectionBox.style.width = Math.abs(width) + "px";
+	selectionBox.style.height = Math.abs(height) + "px";
+}
+
+function finishSelection() {
+	if (!isSelecting) return;
+	isSelecting = false;
+
+	const width = parseInt(selectionBox.style.width);
+	const height = parseInt(selectionBox.style.height);
+
+	// Only create a selection if it's large enough
+	if (width > 10 && height > 10) {
+		// Get the selected area
+		const x = parseInt(selectionBox.style.left);
+		const y = parseInt(selectionBox.style.top);
+
+		// Store the selected area data
+		selectedArea = {
+			x: x,
+			y: y,
+			width: width,
+			height: height,
+			imageData: ctx.getImageData(x, y, width, height),
+			originalData: ctx.getImageData(x, y, width, height), // Keep an original copy
+		};
+
+		// Make the selection box interactive
+		selectionBox.style.pointerEvents = "auto";
+		selectionBox.style.cursor = "move";
+
+		// Save the complete canvas state before clearing the selection area
+		const fullCanvasData = ctx.getImageData(
+			0,
+			0,
+			canvas.width,
+			canvas.height
+		);
+		selectedArea.backgroundState = fullCanvasData;
+
+		// Clear the selected area from the canvas to remove the original content
+		ctx.clearRect(x, y, width, height);
+
+		// Draw the selected content inside the selection box as a preview
+		drawSelectedContent();
+
+		// Add resize handles
+		addResizeHandles(selectionBox);
+
+		// Add event listeners for dragging
+		selectionBox.addEventListener("mousedown", startDragSelection);
+	} else {
+		// Remove the selection if it's too small
+		removeSelectionBox();
+	}
+}
+function startDragSelection(e) {
+	if (e.target.classList.contains("resize-handle")) return;
+
+	isDraggingSelection = true;
+	lastSelectX = e.clientX;
+	lastSelectY = e.clientY;
+
+	// Store the canvas state at the start of dragging
+	if (selectedArea) {
+		// Restore the canvas to the state without the selection
+		ctx.putImageData(selectedArea.backgroundState, 0, 0);
+	}
+
+	document.addEventListener("mousemove", dragSelection);
+	document.addEventListener("mouseup", stopResizeOrDrag);
+}
+// New function to draw the selected content
+function drawSelectedContent() {
+    if (!selectedArea) return;
+    
+    // Draw the selected content at its current position
+    ctx.putImageData(
+        selectedArea.imageData, 
+        selectedArea.x, 
+        selectedArea.y,
+        0, 0,
+        selectedArea.width,
+        selectedArea.height
+    );
+}
+// New function to save the background state
+function saveBackgroundBeforeSelection(x, y, width, height) {
+    // Save canvas state before selection for background restoration
+    selectedArea.backgroundState = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    
+    // Clear the selected area from the canvas to avoid duplication
+    ctx.clearRect(x, y, width, height);
+    
+    // Draw the selection on top for preview
+    drawSelectedContent();
+}
+
+function addResizeHandles(selectionBox) {
+	const handles = ["n", "ne", "e", "se", "s", "sw", "w", "nw"];
+
+	handles.forEach((position) => {
+		const handle = document.createElement("div");
+		handle.className = `resize-handle resize-${position}`;
+		handle.style.position = "absolute";
+		handle.style.width = "10px";
+		handle.style.height = "10px";
+		handle.style.backgroundColor = toolSettings.select.color;
+		handle.style.borderRadius = "50%";
+		handle.style.zIndex = "10";
+
+		// Position the handle based on its location
+		switch (position) {
+			case "n":
+				handle.style.top = "-5px";
+				handle.style.left = "50%";
+				handle.style.transform = "translateX(-50%)";
+				handle.style.cursor = "ns-resize";
+				break;
+			case "ne":
+				handle.style.top = "-5px";
+				handle.style.right = "-5px";
+				handle.style.cursor = "nesw-resize";
+				break;
+			case "e":
+				handle.style.right = "-5px";
+				handle.style.top = "50%";
+				handle.style.transform = "translateY(-50%)";
+				handle.style.cursor = "ew-resize";
+				break;
+			case "se":
+				handle.style.bottom = "-5px";
+				handle.style.right = "-5px";
+				handle.style.cursor = "nwse-resize";
+				break;
+			case "s":
+				handle.style.bottom = "-5px";
+				handle.style.left = "50%";
+				handle.style.transform = "translateX(-50%)";
+				handle.style.cursor = "ns-resize";
+				break;
+			case "sw":
+				handle.style.bottom = "-5px";
+				handle.style.left = "-5px";
+				handle.style.cursor = "nesw-resize";
+				break;
+			case "w":
+				handle.style.left = "-5px";
+				handle.style.top = "50%";
+				handle.style.transform = "translateY(-50%)";
+				handle.style.cursor = "ew-resize";
+				break;
+			case "nw":
+				handle.style.top = "-5px";
+				handle.style.left = "-5px";
+				handle.style.cursor = "nwse-resize";
+				break;
+		}
+
+		handle.setAttribute("data-resize", position);
+		selectionBox.appendChild(handle);
+
+		// Add event listener for resize
+		handle.addEventListener("mousedown", function (e) {
+			e.stopPropagation();
+			isResizingSelection = true;
+			resizeHandle = position;
+			lastSelectX = e.clientX;
+			lastSelectY = e.clientY;
+			document.addEventListener("mousemove", resizeSelection);
+			document.addEventListener("mouseup", stopResizeOrDrag);
+		});
+	});
+}
+
+function dragSelection(e) {
+	if (!isDraggingSelection || !selectionBox || !selectedArea) return;
+
+	const dx = e.clientX - lastSelectX;
+	const dy = e.clientY - lastSelectY;
+
+	// First, restore the canvas to the background state (without selection)
+	if (selectedArea.backgroundState) {
+		ctx.putImageData(selectedArea.backgroundState, 0, 0);
+	}
+
+	// Update selection box position
+	const currentLeft = parseInt(selectionBox.style.left) || 0;
+	const currentTop = parseInt(selectionBox.style.top) || 0;
+
+	selectionBox.style.left = currentLeft + dx + "px";
+	selectionBox.style.top = currentTop + dy + "px";
+
+	// Update selected area position
+	selectedArea.x += dx;
+	selectedArea.y += dy;
+
+	// Draw the selected content at the new position
+	drawSelectedContent();
+
+	lastSelectX = e.clientX;
+	lastSelectY = e.clientY;
+}
+
+function dragSelection(e) {
+	if (!isDraggingSelection || !selectionBox) return;
+
+	const dx = e.clientX - lastSelectX;
+	const dy = e.clientY - lastSelectY;
+
+	const currentLeft = parseInt(selectionBox.style.left) || 0;
+	const currentTop = parseInt(selectionBox.style.top) || 0;
+
+	selectionBox.style.left = currentLeft + dx + "px";
+	selectionBox.style.top = currentTop + dy + "px";
+
+	lastSelectX = e.clientX;
+	lastSelectY = e.clientY;
+
+	// Update selected area position
+	if (selectedArea) {
+		selectedArea.x += dx;
+		selectedArea.y += dy;
+	}
+}
+
+function resizeSelection(e) {
+	if (!isResizingSelection || !selectionBox || !selectedArea) return;
+
+	const dx = e.clientX - lastSelectX;
+	const dy = e.clientY - lastSelectY;
+
+	// First, restore the canvas to the background state
+	if (selectedArea.backgroundState) {
+		ctx.putImageData(selectedArea.backgroundState, 0, 0);
+	}
+
+	const selRect = selectionBox.getBoundingClientRect();
+	let newWidth = selRect.width;
+	let newHeight = selRect.height;
+	let newLeft = parseInt(selectionBox.style.left);
+	let newTop = parseInt(selectionBox.style.top);
+
+	// Handle resize based on which handle was grabbed
+	switch (resizeHandle) {
+		case "n":
+			newTop += dy;
+			newHeight -= dy;
+			break;
+		case "ne":
+			newTop += dy;
+			newHeight -= dy;
+			newWidth += dx;
+			break;
+		case "e":
+			newWidth += dx;
+			break;
+		case "se":
+			newWidth += dx;
+			newHeight += dy;
+			break;
+		case "s":
+			newHeight += dy;
+			break;
+		case "sw":
+			newLeft += dx;
+			newWidth -= dx;
+			newHeight += dy;
+			break;
+		case "w":
+			newLeft += dx;
+			newWidth -= dx;
+			break;
+		case "nw":
+			newLeft += dx;
+			newTop += dy;
+			newWidth -= dx;
+			newHeight -= dy;
+			break;
+	}
+
+	// Enforce minimum size
+	if (newWidth < 20) newWidth = 20;
+	if (newHeight < 20) newHeight = 20;
+
+	// Apply the new dimensions to the selection box
+	selectionBox.style.width = newWidth + "px";
+	selectionBox.style.height = newHeight + "px";
+	selectionBox.style.left = newLeft + "px";
+	selectionBox.style.top = newTop + "px";
+
+	// Create a new, resized version of the image data
+	const tempCanvas = document.createElement("canvas");
+	const tempCtx = tempCanvas.getContext("2d");
+	tempCanvas.width = selectedArea.originalData.width;
+	tempCanvas.height = selectedArea.originalData.height;
+
+	// Put the original image data on the temp canvas
+	tempCtx.putImageData(selectedArea.originalData, 0, 0);
+
+	// Create another temp canvas for the resized image
+	const resizedCanvas = document.createElement("canvas");
+	const resizedCtx = resizedCanvas.getContext("2d");
+	resizedCanvas.width = newWidth;
+	resizedCanvas.height = newHeight;
+
+	// Draw the original image to the resized canvas with scaling
+	resizedCtx.drawImage(tempCanvas, 0, 0, newWidth, newHeight);
+
+	// Update the selected area data
+	selectedArea.x = newLeft;
+	selectedArea.y = newTop;
+	selectedArea.width = newWidth;
+	selectedArea.height = newHeight;
+	selectedArea.imageData = resizedCtx.getImageData(0, 0, newWidth, newHeight);
+
+	// Draw the resized content
+	drawSelectedContent();
+
+	lastSelectX = e.clientX;
+	lastSelectY = e.clientY;
+}
+
+function stopResizeOrDrag() {
+	if (isDraggingSelection || isResizingSelection) {
+		// Keep the selection active but update the background state
+		if (selectedArea) {
+			// Update the background state to include everything except the selection
+			let newBackgroundState = ctx.getImageData(
+				0,
+				0,
+				canvas.width,
+				canvas.height
+			);
+
+			// Clear the selection area from the background (to avoid doubling content)
+			ctx.putImageData(newBackgroundState, 0, 0);
+			ctx.clearRect(
+				selectedArea.x,
+				selectedArea.y,
+				selectedArea.width,
+				selectedArea.height
+			);
+
+			// Update the background state without the selection
+			selectedArea.backgroundState = ctx.getImageData(
+				0,
+				0,
+				canvas.width,
+				canvas.height
+			);
+
+			// Redraw the selected content
+			drawSelectedContent();
+		}
+	}
+
+	isDraggingSelection = false;
+	isResizingSelection = false;
+	document.removeEventListener("mousemove", dragSelection);
+	document.removeEventListener("mousemove", resizeSelection);
+	document.removeEventListener("mouseup", stopResizeOrDrag);
+}
+
+function removeSelectionBox() {
+	if (selectionBox) {
+		if (selectedArea) {
+			// Make sure the selected content stays on the canvas
+			drawSelectedContent();
+		}
+		selectionBox.remove();
+		selectionBox = null;
+		selectedArea = null;
+		// Save the state
+		saveToHistory();
+	}
+	isSelecting = false;
+	isDraggingSelection = false;
+	isResizingSelection = false;
+}
+
 function drawArrow(fromX, fromY, toX, toY) {
 	// Calculate arrow properties
 	const headLength = 15;
@@ -419,29 +906,6 @@ function drawArrow(fromX, fromY, toX, toY) {
 	ctx.fill();
 }
 
-function stopDrawing() {
-	if (!isDrawing) return;
-
-	isDrawing = false;
-
-	// Special handling for shape tool
-	if (currentTool === "shape" && isDrawingShape) {
-		isDrawingShape = false;
-		shapePreviewData = null;
-	}
-
-	// Reset composite operation for eraser
-	if (currentTool === "eraser") {
-		ctx.globalCompositeOperation = "source-over";
-	}
-
-	// Reset global alpha for marker
-	ctx.globalAlpha = 1.0;
-
-	// Save to history
-	saveToHistory();
-}
-
 function getCoordinates(e) {
 	let x, y;
 
@@ -452,8 +916,9 @@ function getCoordinates(e) {
 		x = touch.clientX - rect.left;
 		y = touch.clientY - rect.top;
 	} else {
-		x = e.offsetX;
-		y = e.offsetY;
+		const rect = canvas.getBoundingClientRect();
+		x = e.clientX - rect.left;
+		y = e.clientY - rect.top;
 	}
 
 	return { x, y };
