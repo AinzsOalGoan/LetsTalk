@@ -1,40 +1,172 @@
-<footer class="ml-64 mt-1 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-t border-gray-200 dark:border-gray-700 py-8 mb-0">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-      
-      <!-- Logo and Text -->
-      <div class="flex items-center gap-2">
-        <i class="fas fa-globe text-2xl text-blue-600"></i>
-        <span class="text-lg font-semibold">LetsTalk</span>
-      </div>
-
-      <!-- Footer Links -->
-      <div class="flex gap-6 text-sm">
-        <a href="/about" class="hover:underline">About</a>
-        <a href="/contact" class="hover:underline">Contact</a>
-        <a href="/privacy" class="hover:underline">Privacy</a>
-      </div>
-
-      <!-- Social Icons -->
-      <div class="flex space-x-4">
-        <a href="#" class="text-gray-500 hover:text-blue-500">
-          <i class="fab fa-facebook-f"></i>
-        </a>
-        <a href="#" class="text-gray-500 hover:text-blue-500">
-          <i class="fab fa-twitter"></i>
-        </a>
-        <a href="#" class="text-gray-500 hover:text-pink-500">
-          <i class="fab fa-instagram"></i>
-        </a>
-      </div>
+<footer>
+  <div class="row">
+    <div class="col">
+      <img src="logo.png" class="logo">
+      <p>Dipankar</p>
     </div>
-
-    <!-- Divider -->
-    <div class="border-t border-gray-300 dark:border-gray-700 my-6"></div>
-
-    <!-- Copyright -->
-    <div class="text-center text-xs text-gray-500 dark:text-gray-400">
-      © <%= new Date().getFullYear() %> LetsTalk. All rights reserved.
+    <div class="col">
+      <h3>Office</h3>
+      <p>ITPL Road</p>
+      <p>ITPL Road</p>
+      <p>ITPL Road</p>
+      <p class="email-id">mannagopal2002@gmail.com</p>
+      <h4>9330831609</h4>
+    </div>
+    <div class="col">
+      <h3>Links</h3>
+      <ul>
+        <li><a href="">Home</a></li>
+        <li><a href="">Services</a></li>
+        <li><a href="">About us</a></li>
+        <li><a href="">Features</a></li>
+        <li><a href="">Contacts</a></li>
+      </ul>
+    </div>
+    <div class="col">
+      <h3>Newsletter</h3>
+      <form>
+        <i class="fa-solid fa-envelope"></i>
+        <input type="email" placeholder="Enter your emil id" required>
+        <button type="submit"><i class="fa-solid fa-arrow-right-to-bracket"></i></button>
+      </form>
+      <div class="social-icons">
+        <i class="fa-brands fa-facebook"></i>
+        <i class="fa-brands fa-twitter"></i>
+        <i class="fa-brands fa-whatsapp"></i>
+        <i class="fa-brands fa-pinterest"></i>
+      </div>
     </div>
   </div>
+  <hr>
+  <br>
+  <p class="copyright">Easy Tutorials @ 2025 - All Right Reserved</p>
 </footer>
+
+<style>
+  *{
+		margin: 0;
+		padding: 0;
+		box-sizing: border-box;
+		font-family: "Poppins", sans-serif;
+	  }
+    footer{
+      grid-area: footer;
+      width: 99.1%;
+      bottom: 0;
+      background: #004aad;
+      color: #fff;
+      padding: 40px 0 30px;
+      font-size: 14px;
+      line-height: 20px;
+      margin-left: 11px;
+    }
+    .row{
+     width: 85%;
+     margin: auto; 
+     display: flex;
+     flex-wrap: wrap;
+     align-items: flex-start;
+     justify-content: space-between;
+    }
+    
+    .col{
+      flex-basis: 25%;
+      padding: 10px;
+    }
+    
+    .col:nth-child(2) .col:nth-child(3){
+      flex-basis: 15%;
+    }
+    
+    .logo{
+      width: 80px;
+      margin-bottom: 30px;
+    }
+    
+    .col h3{
+      width: fit-content;
+      margin-bottom: 40px;
+      position: relative;
+    }
+    
+    .email-id{
+      width: fit-content;
+      border-bottom: 1px solid #ccc;
+      margin: 20px 0;
+    }
+    
+    ul li{
+      list-style: none;
+      margin-bottom: 12px;
+    
+    }
+    
+    ul li a{
+      text-decoration: none;
+      color: #fff;
+    }
+    
+    form{
+    padding-bottom: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 2px solid #ccc;
+    margin-bottom: 50px;  
+    }
+    
+    form .fa-solid{
+      font-size: 18px;
+      margin-right: 10px;
+    }
+    
+    form input{
+      width: 100%;
+      background: transparent;
+      color: #ccc;
+      border: 0;
+      outline: none;
+    }
+    
+    form button{
+      background: transparent;
+      border: 0;
+      outline: none;
+      cursor: pointer;
+    }
+    
+    form button .fa-solid{
+      font-size: 16px;
+      color: #ccc;
+    }
+    
+    .social-icons .fa-brands{
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      text-align: center;
+      line-height: 40px;
+      font-size: 20px;
+      color: #000;
+      background: #fff;
+      margin-right: 15px;
+      cursor: pointer;
+    }
+    .hr{
+      width: 90%;
+      border: 0;
+      border-bottom: 1px solid #ccc;
+      margin: 20px auto;
+    }
+    
+    .copyright{
+      text-align: center;
+      font-size: 20px;
+    }
+  
+    .sidebar.collapsed ~ footer {
+      margin-left: -114px;
+      width: 108.5%; /* When sidebar is collapsed */
+
+    }
+</style>

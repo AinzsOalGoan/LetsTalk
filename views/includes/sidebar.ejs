@@ -1,21 +1,292 @@
-<!-- sidebar.ejs -->
-<div id="sidebar"
-     class="bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 w-64 fixed top-0 left-0 mt-16 h-[calc(100vh-4rem)] transition-transform duration-300 transform md:translate-x-0 -translate-x-full z-40">
-  <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-    <span class="text-lg font-bold">Menu</span>
-  </div>
-  <nav class="mt-4 flex flex-col space-y-2 px-4">
-    <a href="/home" class="flex items-center space-x-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700">
-      <i class="fas fa-home"></i><span>Home</span>
+<aside class="sidebar">
+  <!-- Sidebar Header -->
+  <header class="sidebar-header">
+    <a href="#" class="header-logo">
+      <img src="https://images.unsplash.com/photo-1544502062-f82887f03d1c?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3" alt="ProfilePic" />
     </a>
-    <a href="/users/profile" class="flex items-center space-x-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700">
-      <i class="fas fa-user"></i><span>Profile</span>
-    </a>
-    <a href="/settings" class="flex items-center space-x-2 p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700">
-      <i class="fas fa-cog"></i><span>Settings</span>
-    </a>
-    <a href="/users/register">signup</a>
-    <a href="/users/login">Login</a>
-    <a href="/recruiter/register">register Reqruiter</a>
+    <button class="sidebar-toggler">
+      <span class="material-symbols-rounded">chevron_left</span>
+    </button>
+  </header>
+  <nav class="sidebar-nav">
+    <!-- Primary Top Nav -->
+    <ul class="nav-list primary-nav">
+      <li class="nav-item">
+        <a href="#" class="nav-link">
+          <span class="material-symbols-rounded">dashboard</span>
+          <span class="nav-label">Dashboard</span>
+        </a>
+        <ul class="dropdown-menu">
+          <li class="nav-item"><a class="nav-link dropdown-title">Dashboard</a></li>
+        </ul>
+      </li>
+      <!-- Dropdown -->
+      <li class="nav-item dropdown-container">
+        <a href="#" class="nav-link dropdown-toggle">
+          <span class="material-symbols-rounded">calendar_today</span>
+          <span class="nav-label">Services</span>
+          <span class="dropdown-icon material-symbols-rounded">keyboard_arrow_down</span>
+        </a>
+        <!-- Dropdown Menu -->
+        <ul class="dropdown-menu">
+          <li class="nav-item"><a class="nav-link dropdown-title">Services</a></li>
+          <li class="nav-item"><a href="#" class="nav-link dropdown-link">IT Consulting</a></li>
+          <li class="nav-item"><a href="#" class="nav-link dropdown-link">Cloud Solutions</a></li>
+          <li class="nav-item"><a href="#" class="nav-link dropdown-link">Mobile Apps</a></li>
+        </ul>
+      </li>
+      <li class="nav-item">
+        <a href="#" class="nav-link">
+          <span class="material-symbols-rounded">notifications</span>
+          <span class="nav-label">Notifications</span>
+        </a>
+        <ul class="dropdown-menu">
+          <li class="nav-item"><a class="nav-link dropdown-title">Notifications</a></li>
+        </ul>
+      </li>
+      <li class="nav-item">
+        <a href="#" class="nav-link">
+          <span class="material-symbols-rounded">local_library</span>
+          <span class="nav-label">Resources</span>
+        </a>
+        <ul class="dropdown-menu">
+          <li class="nav-item"><a class="nav-link dropdown-title">Resources</a></li>
+        </ul>
+      </li>
+      <!-- Dropdown -->
+      <li class="nav-item dropdown-container">
+        <a href="#" class="nav-link dropdown-toggle">
+          <span class="material-symbols-rounded">star</span>
+          <span class="nav-label">Bookmarks</span>
+          <span class="dropdown-icon material-symbols-rounded">keyboard_arrow_down</span>
+        </a>
+        <!-- Dropdown Menu -->
+        <ul class="dropdown-menu">
+          <li class="nav-item"><a class="nav-link dropdown-title">Bookmarks</a></li>
+          <li class="nav-item"><a href="#" class="nav-link dropdown-link">Saved Tutorials</a></li>
+          <li class="nav-item"><a href="#" class="nav-link dropdown-link">Favorite Blogs</a></li>
+          <li class="nav-item"><a href="#" class="nav-link dropdown-link">Resource Guides</a></li>
+        </ul>
+      </li>
+
+      <li class="nav-item">
+        <a href="#" class="nav-link">
+          <span class="material-symbols-rounded">settings</span>
+          <span class="nav-label">Settings</span>
+        </a>
+        <ul class="dropdown-menu">
+          <li class="nav-item"><a class="nav-link dropdown-title">Settings</a></li>
+        </ul>
+      </li>
+    </ul>
+    <!-- Secondary Bottom Nav -->
+    <ul class="nav-list secondary-nav">
+      <li class="nav-item">
+        <a href="#" class="nav-link">
+          <span class="material-symbols-rounded">help</span>
+          <span class="nav-label">Support</span>
+        </a>
+        <ul class="dropdown-menu">
+          <li class="nav-item"><a class="nav-link dropdown-title">Support</a></li>
+        </ul>
+      </li>
+      <li class="nav-item">
+        <a href="#" class="nav-link">
+          <span class="material-symbols-rounded">logout</span>
+          <span class="nav-label">Sign Out</span>
+        </a>
+        <ul class="dropdown-menu">
+          <li class="nav-item"><a class="nav-link dropdown-title">Sign Out</a></li>
+        </ul>
+      </li>
+    </ul>
   </nav>
-</div>
+</aside>
+
+<style>
+  *{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Poppins", sans-serif;
+  }
+  .sidebar {
+    grid-area: sidebar;
+    height:calc(100vh - 73px);
+    position: fixed;
+    top: 73px;
+    align-self: start;
+    left: 0;
+    z-index: 10;
+    background:#004aad;
+    transition: all 0.4s ease;
+    border-radius: px;
+  }
+  .sidebar.collapsed {
+    width: 85px;
+  }
+  .sidebar .sidebar-header {
+    display: flex;
+    position: relative;
+    padding: 15px 20px;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .sidebar-header .header-logo img {
+    width: 46px;
+    height: 46px;
+    display: block;
+    object-fit: contain;
+    border-radius: 50%;
+  }
+  .sidebar-header .sidebar-toggler,
+  .sidebar-menu-button {
+    position: absolute;
+    right: 20px;
+    height: 35px;
+    width: 35px;
+    color: #3191ab;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    background: #EEF2FF;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    transition: 0.4s ease;
+  }
+  .sidebar.collapsed .sidebar-header .sidebar-toggler {
+    transform: translate(-4px, 65px);
+  }
+  .sidebar-header .sidebar-toggler span,
+  .sidebar-menu-button span {
+    font-size: 1.75rem;
+    transition: 0.4s ease;
+  }
+  .sidebar.collapsed .sidebar-header .sidebar-toggler span {
+    transform: rotate(180deg);
+  }
+  .sidebar-header .sidebar-toggler:hover {
+    background: #d9e1fd;
+  }
+  .sidebar-nav .nav-list {
+    list-style: none;
+    display: flex;
+    gap: 0px;
+    padding: 0 15px;
+    flex-direction: column;
+    transform: translateY(15px);
+    transition: 0.4s ease;
+  }
+  .sidebar .sidebar-nav .primary-nav {
+    overflow-y: auto;
+    scrollbar-width: thin;
+    padding-bottom: 20px;
+    height: calc(100vh - 227px);
+    scrollbar-color: transparent transparent;
+  }
+  .sidebar .sidebar-nav .primary-nav:hover {
+    scrollbar-color: #EEF2FF transparent;
+  }
+  .sidebar.collapsed .sidebar-nav .primary-nav {
+    overflow: unset;
+    transform: translateY(65px);
+  }
+  .sidebar-nav .nav-item .nav-link {
+    color: #fff;
+    display: flex;
+    gap: 12px;
+    white-space: nowrap;
+    border-radius: 8px;
+    padding: 11px 15px;
+    align-items: center;
+    text-decoration: none;
+    border: 1px solid #151A2D;
+    transition: 0.4s ease;
+  }
+  .sidebar-nav .nav-item:is(:hover, .open)>.nav-link:not(.dropdown-title) {
+    color: #151A2D;
+    background: #EEF2FF;
+  }
+  .sidebar .nav-link .nav-label {
+    transition: opacity 0.3s ease;
+  }
+  .sidebar.collapsed .nav-link :where(.nav-label, .dropdown-icon) {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .sidebar.collapsed .nav-link .dropdown-icon {
+    transition: opacity 0.3s 0s ease;
+  }
+  .sidebar-nav .secondary-nav {
+    position: absolute;
+    bottom: 25px;
+    width: 100%;
+    background: #004aad;
+  }
+  .sidebar-nav .nav-item {
+    position: relative;
+  }
+  /* Dropdown Stylings */
+  .sidebar-nav .dropdown-container .dropdown-icon {
+    margin: 0 -4px 0 auto;
+    transition: transform 0.4s ease, opacity 0.3s 0.2s ease;
+  }
+  .sidebar-nav .dropdown-container.open .dropdown-icon {
+    transform: rotate(180deg);
+  }
+  .sidebar-nav .dropdown-menu {
+    height: 0;
+    overflow-y: hidden;
+    list-style: none;
+    padding-left: 15px;
+    transition: height 0.4s ease;
+  }
+  .sidebar.collapsed .dropdown-menu {
+    position: absolute;
+    top: -10px;
+    left: 100%;
+    opacity: 0;
+    height: auto !important;
+    padding-right: 10px;
+    overflow-y: unset;
+    pointer-events: none;
+    border-radius: 0 10px 10px 0;
+    background: #151A2D;
+    transition: 0s;
+  }
+  .sidebar.collapsed .dropdown-menu:has(.dropdown-link) {
+    padding: 7px 10px 7px 24px;
+  }
+  .sidebar.sidebar.collapsed .nav-item:hover>.dropdown-menu {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(12px);
+    transition: all 0.4s ease;
+  }
+  .sidebar.sidebar.collapsed .nav-item:hover>.dropdown-menu:has(.dropdown-link) {
+    transform: translateY(10px);
+  }
+  .dropdown-menu .nav-item .nav-link {
+    color: #F1F4FF;
+    padding: 9px 15px;
+  }
+  .sidebar.collapsed .dropdown-menu .nav-link {
+    padding: 7px 15px;
+  }
+  .dropdown-menu .nav-item .nav-link.dropdown-title {
+    display: none;
+    color: #fff;
+    padding: 9px 15px;
+  }
+  .dropdown-menu:has(.dropdown-link) .nav-item .dropdown-title {
+    font-weight: 500;
+    padding: 7px 15px;
+  }
+  .sidebar.collapsed .dropdown-menu .nav-item .dropdown-title {
+    display: block;
+  }
+  .sidebar-menu-button {
+    display: none;
+  }
+</style>

@@ -1,50 +1,126 @@
-<nav
-	class="fixed top-0 left-0 w-full z-50 px-4 py-2 bg-white dark:bg-gray-900 shadow-md text-gray-900 dark:text-white">
-	<div class="max-w-7xl mx-auto flex items-center justify-between">
-		<!-- Inside navbar.ejs -->
-		<div class="flex items-center space-x-2">
-			<button
-				id="sidebarOpen"
-				class="md:hidden text-gray-700 dark:text-gray-300">
-				<i class="fas fa-bars text-xl"></i>
-			</button>
-			<a href="/" class="flex items-center space-x-2">
-				<i class="fas fa-globe text-2xl"></i>
-				<span class="font-semibold text-lg">LOGO</span>
-			</a>
-		</div>
-
-		<button
-			id="sidebarOpen"
-			class="md:hidden text-gray-700 dark:text-white mr-4">
-			Colapse
-		</button>
-
-		<!-- Center: Search Bar -->
-		<div class="flex-1 mx-8">
-			<div
-				class="flex items-center w-full max-w-md mx-auto bg-gray-100 dark:bg-gray-800 rounded-full focus-within:ring-2 focus-within:ring-blue-500">
-				<input
-					type="text"
-					placeholder="Search..."
-					class="flex-grow px-4 py-2 bg-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none" />
-				<button
-					class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-					<i
-						class="fas fa-search text-gray-600 dark:text-gray-300"></i>
-				</button>
-			</div>
-		</div>
-
-
-		<!-- Right: Profile Picture -->
-		<div >
-			<a href="/home">
-				<img
-					src="https://img.freepik.com/premium-vector/cute-woman-avatar-profile-vector-illustration_1058532-14592.jpg"
-					alt="Profile"
-					class="w-10 h-10 rounded-full object-cover border-2 border-gray-300 dark:border-gray-600" />
-			</a>
-		</div>
+<nav class="top-navbar">
+	<div class="navbar-content">
+	  <h1 class="navbar-title">InternPortal</h1>
+	  <!-- Search Bar -->
+<div class="search-bar">
+  <input type="text" placeholder="Search..." />
+  <button type="submit">
+	<svg class="search-icon" viewBox="0 0 24 24">
+	  <circle cx="11" cy="11" r="8" stroke="white" stroke-width="2" fill="none"/>
+	  <line x1="17" y1="17" x2="22" y2="22" stroke="white" stroke-width="2"/>
+	</svg>
+  </button>
+</div>
+	  <nav class="navbar-links">
+		<a href="#">Home</a>
+		<a href="#">About</a>
+		<a href="#">Contact</a>
+		<a href="#">Help</a>
+	  </nav>
+	  <img src="https://images.unsplash.com/photo-1544502062-f82887f03d1c?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3" alt="Profile" class="profile-pic" />
+	  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
 	</div>
-</nav>
+  </nav>
+
+  <style>
+	*{
+		margin: 0;
+		padding: 0;
+		box-sizing: border-box;
+		font-family: "Poppins", sans-serif;
+	  }
+	.top-navbar {
+		grid-area: navbar;
+		position: sticky;
+		top: 0;
+		left: 0;
+		right: 0;
+		height: 70px;
+		display: flex;
+		align-items: center;
+		z-index: 1000;
+		padding: 0 20px;
+		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+		border-style: hidden;
+		border: 10px;
+		border-color: white;
+		background:#004aad;
+	}
+	  
+	  .navbar-content {
+		display: flex;
+		justify-content: space-between;
+		width: 100%;
+		align-items: center;
+		border: 26px;
+		border-color: #004aad;
+		background:#004aad;
+		border-radius: 10px;
+		padding: 0px;
+	  }
+	  
+	  .navbar-title {
+		font-size: 1.5rem;
+		margin: 0;
+		color: white;
+	  }
+	  .navbar-links{
+		align-items: center;
+	  }
+	  .navbar-links a {
+		color: white;
+		margin-left: 20px;
+		text-decoration: none;
+		font-weight: 500;
+		align-items: center;
+	  }
+	  
+	  .navbar-links a:hover {
+		text-decoration: underline;
+	  }
+	
+	  .search-bar {
+		display: flex;
+		align-items: center;
+		background:#004aad;
+		border-radius: 50px;
+		padding: 3px 10px;
+		width: 400px;
+		border: 2px solid;
+		color: white;
+	  }
+	  
+	  .search-bar input {
+		flex: 1;
+		border: none;
+		padding: 5px 15px;
+		border-radius: 50px;
+		outline: none;
+		font-size: 14px;
+		background: transparent;
+		color: white;
+	  }
+	  
+	  .search-bar button {
+		background: transparent;
+		border: none;
+		cursor: pointer;
+		padding: 8px;
+		display: flex;
+		align-items: center;
+	  }
+	  
+	  .search-icon {
+		width: 20px;
+		height: 20px;
+	  }
+	  
+	  .profile-pic {
+		width: 40px;
+		height: 40px;
+		border-radius: 50%;
+		object-fit: cover;
+		cursor: pointer;
+		align-items: center;
+	  }
+  </style>
