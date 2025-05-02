@@ -1,22 +1,197 @@
 <% layout("/layouts/boilerplate") %>
-<body style="background-image: url('https://wallpapercave.com/wp/wp8885657.png'); background-size: cover; background-position: center; color: #ffffff; font-family: Arial, sans-serif; padding: 20px;">
-    <div style="max-width: 400px; margin: 50px auto; background-color: rgba(0, 0, 0, 0.8); padding: 30px; border-radius: 10px;">
-        <h2 style="text-align: center; color: #ffda79;">Sign Up</h2>
-        <form action="/users/register" method="POST">
-            <div style="margin-bottom: 15px;">
-                <label for="fullName" style="display: block; margin-bottom: 5px;">Full Name:</label>
-                <input type="text" id="fullName" name="fullName" required style="width: 100%; padding: 10px; border: none; border-radius: 5px; background-color: #333; color: #fff;">
-            </div>
-            <div style="margin-bottom: 15px;">
-                <label for="username" style="display: block; margin-bottom: 5px;">Username:</label>
-                <input type="text" id="username" name="username" required style="width: 100%; padding: 10px; border: none; border-radius: 5px; background-color: #333; color: #fff;">
-            </div>
-            <div style="margin-bottom: 15px;">
-                <label for="password" style="display: block; margin-bottom: 5px;">Password:</label>
-                <input type="password" id="password" name="password" required style="width: 100%; padding: 10px; border: none; border-radius: 5px; background-color: #333; color: #fff;">
-            </div>
-            <button type="submit" style="width: 100%; padding: 10px; background-color: #ff6347; color: #fff; border: none; border-radius: 5px; font-weight: bold;">Sign Up</button>
-            <a href="/users/login" style="display: block; text-align: center; margin-top: 10px; color: #ffda79;">Login</a>
-        </form>
+<div class="auth-container">
+    <div id="signup-form" class="auth-form">
+      <h1>Create Account</h1>
+
+      <input type="text" id="name" placeholder="Full Name" required>
+      <input type="email" id="email" placeholder="Email Address" required>
+
+      <div class="password-wrapper">
+        <input type="password" id="password" placeholder="Password" required>
+        <span class="toggle-password" onclick="togglePassword('password')">👁️</span>
+      </div>
+
+      <div class="password-wrapper">
+        <input type="password" id="confirm-password" placeholder="Confirm Password" required>
+        <span class="toggle-password" onclick="togglePassword('confirm-password')">👁️</span>
+      </div>
+
+      <p id="error-msg"></p>
+
+      <button type="submit" class="auth-btn">Sign Up</button>
+
+      <p class="auth-switch">Already have an account? <a href="/users/login">Log In</a></p>
+
+      <div class="google-btn" onclick="googleSignIn()"> 
+        <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/google/google-original.svg" alt="google" width="24">
+        <span>Sign Up with Google</span>
+      </div>
     </div>
-</body>
+  </div>
+
+  <style>
+
+    main {
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-family: 'Arial', sans-serif;
+      }
+      
+      .auth-container {
+        background: white;
+        padding: 40px;
+        border-radius: 12px;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        width: 100%;
+        max-width: 400px;
+        text-align: center;
+      }
+      
+      .auth-form h1 {
+        margin-bottom: 30px;
+        font-size: 28px;
+        color: #004aad;
+      }
+      
+      .auth-form input {
+        width: 100%;
+        padding: 12px 15px;
+        margin: 10px 0;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        font-size: 16px;
+      }
+      
+      .auth-btn {
+        width: 100%;
+        padding: 14px;
+        background-color: #004aad;
+        color: white;
+        font-size: 18px;
+        border: none;
+        border-radius: 8px;
+        margin-top: 20px;
+        cursor: pointer;
+        transition: background 0.3s ease;
+      }
+      
+      .auth-btn:hover {
+        background-color: #00307a;
+      }
+      
+      .auth-switch {
+        margin-top: 20px;
+        font-size: 14px;
+      }
+      
+      .auth-switch a {
+        color: #004aad;
+        text-decoration: none;
+        font-weight: bold;
+      }
+      
+    .password-wrapper {
+        position: relative;
+      }
+      
+      .toggle-password {
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        cursor: pointer;
+      }
+      
+      #error-msg, #login-error-msg {
+        color: red;
+        font-size: 14px;
+        margin: 8px 0;
+      }
+      
+      .google-btn {
+        margin-top: 20px;
+        padding: 10px;
+        background: white;
+        color: #444;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        cursor: pointer;
+        font-weight: bold;
+      }
+      
+      .google-btn:hover {
+        background: #f1f1f1;
+      }
+      @keyframes shake {
+        0% { transform: translateX(0); }
+        25% { transform: translateX(-5px); }
+        50% { transform: translateX(5px); }
+        75% { transform: translateX(-5px); }
+        100% { transform: translateX(0); }
+      }
+      
+  </style>
+
+  <script>
+    // Toggle show/hide password
+function togglePassword(id) {
+    const input = document.getElementById(id);
+    if (input.type === "password") {
+      input.type = "text";
+    } else {
+      input.type = "password";
+    }
+  }
+  
+  // SignUp Form Validation
+  document.getElementById('signup-form')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+  
+    const password = document.getElementById('password').value;
+    const confirmPassword = document.getElementById('confirm-password').value;
+    const errorMsg = document.getElementById('error-msg');
+  
+    if (password !== confirmPassword) {
+      errorMsg.textContent = "❌ Passwords do not match!";
+      errorMsg.style.animation = 'shake 0.3s';
+      setTimeout(() => { errorMsg.style.animation = ''; }, 300);
+      return;
+    } else {
+      errorMsg.textContent = "";
+      alert("✅ Account created successfully!");
+      // Redirect to dashboard or login page here
+    }
+  });
+  
+  // Login Form Validation
+  document.getElementById('login-form')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+  
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+    const loginErrorMsg = document.getElementById('login-error-msg');
+  
+    if (email === "" || password === "") {
+      loginErrorMsg.textContent = "❌ Please fill all fields!";
+      loginErrorMsg.style.animation = 'shake 0.3s';
+      setTimeout(() => { loginErrorMsg.style.animation = ''; }, 300);
+      return;
+    } else {
+      loginErrorMsg.textContent = "";
+      alert("✅ Logged in successfully!");
+      // Redirect to dashboard here
+    }
+  });
+  
+  // Dummy Google Sign In
+  function googleSignIn() {
+    alert("🚀 Google Sign In clicked (real implementation in backend with Firebase or OAuth2)");
+  }
+  
+  </script>

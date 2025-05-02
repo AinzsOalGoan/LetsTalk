@@ -5,7 +5,7 @@ const { uploadOnCloudinary } = require("../utils/cloudinary");
 
 // GET: Registration Page
 module.exports.renderRegistration = (req, res) => {
-	res.render("users/registration.ejs");
+	res.render("users/signup.ejs");
 };
 
 // POST: Register User with Details

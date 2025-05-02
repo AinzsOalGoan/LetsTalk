@@ -6,20 +6,57 @@
 
 		<title>LetsTalk</title>
 		<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" />
-		<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" />
-
 	</head>
 	<body>
 		<%- include("../includes/navbar.ejs") %>
 
 		<%-include('../includes/sidebar.ejs') %>
+
 		<main>
-			 <%- body %>
+			<%- body %>
 		</main>
-		<br><br><br><br><br><br><br>
+	
 		<%- include("../includes/footer.ejs") %>
+
 	</body>
 </html>
+
+<style>
+	*{
+		margin: 0;
+		padding: 0;
+		box-sizing: border-box;
+		font-family: "Poppins", sans-serif;
+	  }
+	  body{
+		min-height: 100vh;
+		display: grid;
+		grid-template-columns: 200px 1fr;
+		grid-template-rows: auto 1fr auto;
+		grid-template-areas:
+		"navbar navbar"
+		"sidebar main"
+		"sidebar footer";
+	}
+	main{
+		grid-area: main;
+		margin-left: 11px;
+		width: 99%;
+		height: 100vh;
+	}
+	
+	.main-content {
+		flex: 1;
+		padding: 20px;
+		transition: margin-left 0.4s ease;
+		margin-left: 224px; /* Default when sidebar is open */
+	  }
+	  
+	  .sidebar.collapsed ~ main {
+		margin-left: -114px;
+		width: 108.5%; /* When sidebar is collapsed */
+	  }
+</style>
 
 <script>
 	const toggleDropdown = (dropdown, menu, isOpen) => {
