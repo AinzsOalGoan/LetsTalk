@@ -7,6 +7,7 @@ let currentTool = "pen";
 let textInput = null;
 let isDraggingText = false;
 let textDragOffset = { x: 0, y: 0 };
+let eraserCursor = null;
 
 // Tool-specific settings
 let toolSettings = {
@@ -15,7 +16,8 @@ let toolSettings = {
 	eraser: { width: 20 },
 	shape: { color: "#000000", width: 3 },
 	text: { color: "#000000", size: 16 },
-	select: { color: "#0000ff", width: 1 }, // Selection border color and width
+	select: { color: "#3b82f6", width: 2 }, // Selection border color and width
+	eraser: { width: 20 },
 };
 
 // Current shape being drawn
@@ -57,7 +59,84 @@ document.addEventListener("DOMContentLoaded", function () {
 	// Window resize handler
 	window.addEventListener("resize", debounce(resizeCanvas, 250));
 });
+function addCursorStyles() {
+	// Add custom cursor styles to the document head
+	const style = document.createElement("style");
+	style.textContent = `
+		.pen-cursor { cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2'%3E%3Cpath d='M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z'%3E%3C/path%3E%3C/svg%3E") 0 24, auto; }
+		.marker-cursor { cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23ff0000' stroke-width='2'%3E%3Cpath d='M9 11.24V7.5a2.5 2.5 0 0 1 5 0v3.74'%3E%3C/path%3E%3Cpath d='M5 11l1-1v7.5a2.5 2.5 0 0 0 5 0v-7l1-1'%3E%3C/path%3E%3C/svg%3E") 0 24, auto; }
+		.text-cursor { cursor: text; }
+		.shape-cursor { cursor: crosshair; }
+		.select-cursor { cursor: crosshair; }
+		.resize-n { cursor: ns-resize !important; }
+		.resize-ne { cursor: nesw-resize !important; }
+		.resize-e { cursor: ew-resize !important; }
+		.resize-se { cursor: nwse-resize !important; }
+		.resize-s { cursor: ns-resize !important; }
+		.resize-sw { cursor: nesw-resize !important; }
+		.resize-w { cursor: ew-resize !important; }
+		.resize-nw { cursor: nwse-resize !important; }
+		.selection-box {
+			border: 2px dashed #3b82f6 !important;
+			background-color: rgba(59, 130, 246, 0.05);
+			box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.2);
+			border-radius: 2px;
+		}
+		.text-container {
+			box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+			border: 1px solid #3b82f6 !important;
+			border-radius: 4px;
+			background-color: rgba(255, 255, 255, 0.95);
+		}
+		.text-toolbar {
+			border-bottom-left-radius: 4px;
+			background-color: #f0f9ff;
+			border-left: 1px solid #bfdbfe;
+			border-bottom: 1px solid #bfdbfe;
+		}
+		.resize-handle {
+			background-color: #3b82f6 !important;
+			border: 1px solid white;
+			box-shadow: 0 0 3px rgba(0, 0, 0, 0.3);
+			opacity: 0.8;
+		}
+	`;
+	document.head.appendChild(style);
+}
+function updateCanvasCursor() {
+	// Remove any previous cursor classes
+	canvas.classList.remove(
+		"pen-cursor",
+		"marker-cursor",
+		"text-cursor",
+		"shape-cursor",
+		"select-cursor"
+	);
 
+	// Add appropriate cursor class based on current tool
+	switch (currentTool) {
+		case "pen":
+			canvas.classList.add("pen-cursor");
+			break;
+		case "marker":
+			canvas.classList.add("marker-cursor");
+			break;
+		case "text":
+			canvas.classList.add("text-cursor");
+			break;
+		case "shape":
+			canvas.classList.add("shape-cursor");
+			break;
+		case "select":
+			canvas.classList.add("select-cursor");
+			break;
+		case "eraser":
+			canvas.style.cursor = "default"; // We'll use our custom eraser cursor
+			break;
+		default:
+			canvas.style.cursor = "default";
+	}
+}
 function setupCanvas() {
 	const container = document.getElementById("canvas-container");
 
@@ -131,6 +210,30 @@ function setupToolbarListeners() {
 		.addEventListener("change", function () {
 			currentShape = this.value;
 		});
+
+	// Eraser width slider
+	const eraserWidthSlider = document.getElementById("eraser-width-slider");
+	const eraserWidthValue = document.getElementById("eraser-width-value");
+
+	if (eraserWidthSlider && eraserWidthValue) {
+		eraserWidthSlider.addEventListener("input", function () {
+			toolSettings.eraser.width = parseInt(this.value);
+			eraserWidthValue.textContent = this.value;
+
+			// Update cursor size if visible
+			if (currentTool === "eraser" && eraserCursor) {
+				const coords = getCoordinates({
+					clientX: lastX,
+					clientY: lastY,
+				});
+				updateEraserCursor(
+					coords.x,
+					coords.y,
+					toolSettings.eraser.width
+				);
+			}
+		});
+	}
 
 	// Tool buttons
 	document.querySelectorAll(".tool-btn").forEach((btn) => {
@@ -262,7 +365,13 @@ function updateToolSettingsUI() {
 			settingsPanel.classList.add("hidden");
 		}
 	});
-
+	// Update eraser width display if it exists
+	const eraserWidthSlider = document.getElementById("eraser-width-slider");
+	const eraserWidthValue = document.getElementById("eraser-width-value");
+	if (eraserWidthSlider && eraserWidthValue) {
+		eraserWidthSlider.value = toolSettings.eraser.width;
+		eraserWidthValue.textContent = toolSettings.eraser.width;
+	}
 	// Update the displayed values to match current tool settings
 	if (toolSettings[currentTool]) {
 		const settings = toolSettings[currentTool];
@@ -305,6 +414,8 @@ function setupCanvasListeners() {
 	canvas.addEventListener("touchend", handleTouch(stopDrawing));
 	canvas.addEventListener("touchcancel", handleTouch(stopDrawing));
 
+	createEraserCursor();
+
 	// Key events for selection
 	document.addEventListener("keydown", function (e) {
 		if (selectionBox && currentTool === "select") {
@@ -341,6 +452,10 @@ function startDrawing(e) {
 		ctx.globalCompositeOperation = "destination-out";
 		ctx.beginPath();
 		ctx.moveTo(lastX, lastY);
+		// Show and update eraser cursor
+		if (!eraserCursor) createEraserCursor();
+		eraserCursor.style.display = "block";
+		updateEraserCursor(lastX, lastY, toolSettings.eraser.width);
 		return;
 	}
 
@@ -374,7 +489,16 @@ function draw(e) {
 		return;
 	}
 
-	if (!isDrawing) return;
+	if (!isDrawing) {
+		// Update eraser cursor position even when not drawing
+		if (currentTool === "eraser") {
+			const coords = getCoordinates(e);
+			if (!eraserCursor) createEraserCursor();
+			eraserCursor.style.display = "block";
+			updateEraserCursor(coords.x, coords.y, toolSettings.eraser.width);
+		}
+		return;
+	}
 
 	// Prevent scrolling on touch devices
 	e.preventDefault();
@@ -389,6 +513,8 @@ function draw(e) {
 		ctx.stroke();
 		lastX = currentX;
 		lastY = currentY;
+		// Update eraser cursor position
+		updateEraserCursor(currentX, currentY, toolSettings.eraser.width);
 		return;
 	}
 
@@ -453,6 +579,9 @@ function stopDrawing() {
 	// Reset composite operation for eraser
 	if (currentTool === "eraser") {
 		ctx.globalCompositeOperation = "source-over";
+	}
+	if (currentTool !== "eraser" && eraserCursor) {
+		eraserCursor.style.display = "none";
 	}
 
 	// Reset global alpha for marker
@@ -572,28 +701,34 @@ function startDragSelection(e) {
 }
 // New function to draw the selected content
 function drawSelectedContent() {
-    if (!selectedArea) return;
-    
-    // Draw the selected content at its current position
-    ctx.putImageData(
-        selectedArea.imageData, 
-        selectedArea.x, 
-        selectedArea.y,
-        0, 0,
-        selectedArea.width,
-        selectedArea.height
-    );
+	if (!selectedArea) return;
+
+	// Draw the selected content at its current position
+	ctx.putImageData(
+		selectedArea.imageData,
+		selectedArea.x,
+		selectedArea.y,
+		0,
+		0,
+		selectedArea.width,
+		selectedArea.height
+	);
 }
 // New function to save the background state
 function saveBackgroundBeforeSelection(x, y, width, height) {
-    // Save canvas state before selection for background restoration
-    selectedArea.backgroundState = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    
-    // Clear the selected area from the canvas to avoid duplication
-    ctx.clearRect(x, y, width, height);
-    
-    // Draw the selection on top for preview
-    drawSelectedContent();
+	// Save canvas state before selection for background restoration
+	selectedArea.backgroundState = ctx.getImageData(
+		0,
+		0,
+		canvas.width,
+		canvas.height
+	);
+
+	// Clear the selected area from the canvas to avoid duplication
+	ctx.clearRect(x, y, width, height);
+
+	// Draw the selection on top for preview
+	drawSelectedContent();
 }
 
 function addResizeHandles(selectionBox) {
@@ -1204,4 +1339,29 @@ function exportCanvas() {
 	link.download = "drawing.png";
 	link.href = canvas.toDataURL();
 	link.click();
+}
+
+// Create a visual indicator for the eraser tool
+function createEraserCursor() {
+	eraserCursor = document.createElement("div");
+	eraserCursor.id = "eraser-cursor";
+	eraserCursor.style.position = "absolute";
+	eraserCursor.style.border = "1px solid #999";
+	eraserCursor.style.borderRadius = "50%";
+	eraserCursor.style.backgroundColor = "rgba(200, 200, 200, 0.3)";
+	eraserCursor.style.pointerEvents = "none";
+	eraserCursor.style.display = "none";
+	eraserCursor.style.zIndex = "1000";
+	eraserCursor.style.transform = "translate(-50%, -50%)";
+	document.getElementById("canvas-container").appendChild(eraserCursor);
+}
+// Add this function to update the eraser cursor
+function updateEraserCursor(x, y, size) {
+	if (!eraserCursor) return;
+
+	eraserCursor.style.width = size + "px";
+	eraserCursor.style.height = size + "px";
+	eraserCursor.style.left = x + "px";
+	eraserCursor.style.top = y + "px";
+	eraserCursor.style.borderWidth = Math.max(1, size / 10) + "px";
 }
